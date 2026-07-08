@@ -5,426 +5,510 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Evacuation Readiness &amp; Uncertainty Simulator</title>
 <style>
-/* ── Design tokens ── */
 :root {
-  --op:   #639922; --op-light: #edf5d9;
-  --par:  #EF9F27; --par-light: #fef3d7;
-  --blk:  #E24B4A; --blk-light: #fde8e8;
-  --unk:  #8a8886; --unk-light: #f0efee;
-
-  --navy:   #1a2332;
-  --navy2:  #0f172a;
-  --navy3:  #243047;
-  --sky:    #2563eb;
-  --sky-lt: #eff6ff;
-  --sky-bd: #bfdbfe;
-
-  --bg:     #f1f4f8;
-  --surface:#ffffff;
-  --border: #e2e6eb;
-  --border2:#cbd2da;
-
-  --t1: #1a2332;
-  --t2: #4b5563;
-  --t3: #94a3b8;
-
-  --r:  8px;
-  --r2: 12px;
-  --sh: 0 1px 4px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.04);
-  --sh2:0 4px 16px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.04);
-
-  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
-  --mono:'Consolas','Monaco',monospace;
+  --col-operational: #639922;
+  --col-partial: #EF9F27;
+  --col-blocked: #E24B4A;
+  --col-unknown: #B4B2A9;
+  --col-bg: #f4f5f7;
+  --col-header-bg: #1a2332;
+  --col-header-text: #e8ecf0;
+  --col-card-bg: #ffffff;
+  --col-border: #d1d5db;
+  --col-text-primary: #1a2332;
+  --col-text-secondary: #6b7280;
+  --col-accent: #2563eb;
+  --font-main: 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Consolas', 'Monaco', monospace;
+  --radius: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
-body{font-family:var(--font);background:var(--bg);color:var(--t1);font-size:13px;line-height:1.5;min-height:100vh}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-main); background: var(--col-bg); color: var(--col-text-primary); font-size: 13px; line-height: 1.5; }
 
-/* ── Header ── */
-#hdr{
-  background:linear-gradient(135deg,var(--navy2) 0%,var(--navy3) 100%);
-  color:#e8ecf0;
-  padding:14px 22px 12px;
-  border-bottom:1px solid rgba(255,255,255,.06);
+#header { background: var(--col-header-bg); color: var(--col-header-text); padding: 12px 20px; }
+#header h1 { font-size: 17px; font-weight: 600; letter-spacing: 0.3px; }
+#header .subtitle { font-size: 11px; color: #cbd5e1; margin-top: 2px; }
+.header-controls { display: flex; align-items: center; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+.control-group { display: flex; align-items: center; gap: 6px; }
+.control-group label { font-size: 11px; color: #cbd5e1; white-space: nowrap; }
+.control-group input[type="number"] { width: 72px; padding: 4px 8px; border: 1px solid #374151; border-radius: var(--radius); background: #0f172a; color: var(--col-header-text); font-size: 12px; font-family: var(--font-mono); }
+#btn-generate { padding: 5px 14px; background: var(--col-accent); color: white; border: none; border-radius: var(--radius); cursor: pointer; font-size: 12px; font-weight: 500; }
+#btn-generate:hover { background: #1d4ed8; }
+#btn-copy { padding: 5px 12px; background: transparent; color: #94a3b8; border: 1px solid #374151; border-radius: var(--radius); cursor: pointer; font-size: 12px; transition: color 0.15s, background 0.15s; }
+#btn-copy:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+
+.uncertainty-section { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.06); border: 1px solid #374151; border-radius: var(--radius); padding: 6px 14px; }
+.uncertainty-section label { font-size: 12px; font-weight: 600; color: #e2e8f0; white-space: nowrap; }
+#uncertainty-slider { width: 200px; accent-color: var(--col-partial); cursor: pointer; }
+#uncertainty-value { font-size: 15px; font-weight: 700; font-family: var(--font-mono); color: var(--col-partial); min-width: 44px; }
+
+#stats-bar { display: flex; gap: 24px; padding: 7px 20px; background: #0f172a; border-bottom: 1px solid #1e293b; flex-wrap: wrap; }
+.stat-item { display: flex; flex-direction: column; }
+.stat-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 14px; font-weight: 600; font-family: var(--font-mono); color: #e2e8f0; }
+
+.factor-legend { display: flex; gap: 12px; flex-wrap: wrap; padding: 5px 16px; background: #f8fafc; border-bottom: 1px solid var(--col-border); font-size: 10px; }
+.legend-item { display: flex; align-items: center; gap: 4px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+#main { display: flex; height: calc(100vh - 175px); min-height: 500px; }
+#left-panel { width: 35%; border-right: 1px solid var(--col-border); overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+#right-panel { width: 65%; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 12px; }
+
+.dest-card { background: var(--col-card-bg); border: 1px solid var(--col-border); border-radius: var(--radius); padding: 10px 11px; box-shadow: var(--shadow); }
+.dest-card.gk-blocked { border-left: 3px solid var(--col-blocked); }
+.dest-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 7px; }
+.dest-name { font-weight: 600; font-size: 13px; }
+.dest-meta { font-size: 10px; color: var(--col-text-secondary); text-align: right; line-height: 1.4; }
+.factor-pills { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 7px; }
+.fpill { display: inline-flex; align-items: center; gap: 2px; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 500; cursor: default; }
+.fpill.operational { background: var(--col-operational); color: white; }
+.fpill.partial { background: var(--col-partial); color: #1a2332; }
+.fpill.blocked { background: var(--col-blocked); color: white; }
+.fpill.unknown { background: var(--col-unknown); color: #1a2332; }
+.rbar-wrap { margin: 5px 0; }
+.rbar-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--col-text-secondary); margin-bottom: 3px; }
+.rbar-outer { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+.rbar-inner { height: 100%; border-radius: 3px; transition: width 0.25s ease; }
+.dest-stats-row { display: flex; gap: 12px; margin-top: 5px; font-size: 10px; color: var(--col-text-secondary); }
+.dstat { display: flex; flex-direction: column; align-items: center; }
+.dstat-val { font-weight: 600; font-size: 12px; color: var(--col-text-primary); font-family: var(--font-mono); }
+
+.panel-card { background: var(--col-card-bg); border: 1px solid var(--col-border); border-radius: var(--radius); padding: 11px 13px; box-shadow: var(--shadow); }
+.section-hdr { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--col-text-secondary); padding-bottom: 7px; border-bottom: 1px solid var(--col-border); margin-bottom: 9px; }
+
+/* Question-mark explainer links — jump to the relevant card in explainer.html */
+.qmark { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; background: #e5e7eb; color: #4b5563; font-size: 10px; font-weight: 700; text-decoration: none; text-transform: none; letter-spacing: 0; cursor: pointer; }
+.qmark:hover { background: var(--col-accent); color: white; }
+
+#matrix-scroll { overflow-x: auto; }
+#matrix-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+#matrix-table th { padding: 5px 7px; text-align: center; background: #f8fafc; font-weight: 600; border: 1px solid var(--col-border); white-space: nowrap; font-size: 10px; }
+#matrix-table th.row-hdr { text-align: left; min-width: 140px; }
+#matrix-table td { padding: 5px 7px; text-align: center; border: 1px solid var(--col-border); font-family: var(--font-mono); font-size: 11px; }
+#matrix-table td.group-label { text-align: left; font-family: var(--font-main); font-weight: 500; background: #f8fafc; white-space: nowrap; }
+#matrix-table td.assigned { outline: 2px solid var(--col-accent); outline-offset: -2px; font-weight: 700; }
+#matrix-table td.best-unassigned { outline: 2px dashed var(--col-blocked); outline-offset: -2px; opacity: 0.75; }
+
+/* Outcome table — 5-column grid with urgency column */
+.outcome-row { display: grid; grid-template-columns: 1.4fr 0.65fr 1.2fr 0.8fr 1fr; gap: 8px; padding: 8px 4px; border-bottom: 1px solid #f1f5f9; align-items: start; }
+.outcome-row:last-child { border-bottom: none; }
+.outcome-hdr { font-size: 10px; font-weight: 700; color: var(--col-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--col-border) !important; padding-bottom: 6px !important; }
+.og-name { font-weight: 600; font-size: 12px; }
+.og-meta { font-size: 10px; color: var(--col-text-secondary); line-height: 1.5; }
+.srate { font-size: 18px; font-weight: 700; font-family: var(--font-mono); }
+.risk-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; display: inline-block; }
+.risk-badge.high { background: #fee2e2; color: #991b1b; }
+.risk-badge.medium { background: #fef3c7; color: #92400e; }
+.risk-badge.low { background: #d1fae5; color: #065f46; }
+
+/* Urgency badges */
+.urgency-badge { display: inline-block; padding: 2px 7px; border-radius: 8px; font-size: 10px; font-weight: 600; }
+.urgency-badge.immediate { background: #fee2e2; color: #991b1b; }
+.urgency-badge.urgent { background: #fef3c7; color: #92400e; }
+.urgency-badge.can-wait { background: #f3f4f6; color: #374151; }
+
+#bottom-panel { border-top: 1px solid var(--col-border); padding: 12px 18px; background: #f0f4f8; }
+#insight-box { background: white; border: 1px solid #c7d2fe; border-left: 4px solid var(--col-accent); border-radius: var(--radius); padding: 11px 15px; font-size: 12px; line-height: 1.7; }
+#insight-box h3 { font-size: 13px; font-weight: 600; color: var(--col-accent); margin-bottom: 7px; }
+#insight-text p { margin-bottom: 5px; }
+#insight-text p:last-child { margin-bottom: 0; }
+
+/* Params panel */
+#params-panel { border-top: 2px solid var(--col-border); background: #fff; }
+#params-panel summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  cursor: pointer;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--col-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--col-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  user-select: none;
 }
-#hdr-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
-#hdr h1{font-size:18px;font-weight:700;letter-spacing:-.2px;line-height:1.2}
-#hdr h1 span{color:#60a5fa}
-#hdr .sub{font-size:11px;color:var(--t3);margin-top:3px}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.4px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:var(--t3)}
+#params-panel summary::-webkit-details-marker { display: none; }
+#params-panel summary::before { content: '▶'; font-size: 9px; transition: transform 0.2s; display: inline-block; }
+#params-panel[open] summary::before { transform: rotate(90deg); }
+#params-panel summary:hover { background: #f1f5f9; color: var(--col-text-primary); }
 
-#hdr-controls{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
-.ctrl{display:flex;align-items:center;gap:5px}
-.ctrl label{font-size:10px;color:var(--t3);white-space:nowrap;text-transform:uppercase;letter-spacing:.4px}
-.ctrl input[type=number]{width:68px;padding:4px 8px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:rgba(0,0,0,.25);color:#e2e8f0;font-size:12px;font-family:var(--mono);transition:.15s}
-.ctrl input[type=number]:focus{outline:none;border-color:#60a5fa}
-#btn-gen{padding:6px 16px;background:var(--sky);color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.2px;transition:.15s;white-space:nowrap}
-#btn-gen:hover{background:#1d4ed8;transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,.4)}
-#btn-gen:active{transform:none}
-
-/* Uncertainty slider */
-.unc-wrap{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:7px 14px;margin-left:6px}
-.unc-wrap .ulabel{font-size:11px;font-weight:700;color:#e2e8f0;white-space:nowrap;letter-spacing:.2px}
-.unc-track{display:flex;align-items:center;gap:8px}
-.unc-track span.lo,.unc-track span.hi{font-size:9px;color:var(--t3)}
-#unc-slider{
-  width:180px;height:4px;
-  -webkit-appearance:none;appearance:none;
-  background:linear-gradient(to right,var(--op),var(--par),var(--blk));
-  border-radius:4px;cursor:pointer;outline:none;
+/* Methodology section */
+#methodology { border-top: 2px solid var(--col-border); background: #fff; }
+#methodology summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  cursor: pointer;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--col-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--col-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  user-select: none;
 }
-#unc-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:white;border:2px solid var(--par);box-shadow:0 2px 6px rgba(0,0,0,.3);cursor:pointer;transition:.15s}
-#unc-slider::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:white;border:2px solid var(--par);cursor:pointer}
-#unc-val{font-size:16px;font-weight:800;font-family:var(--mono);min-width:44px;color:var(--par);text-align:right;transition:.2s}
+#methodology summary::-webkit-details-marker { display: none; }
+#methodology summary::before { content: '▶'; font-size: 9px; transition: transform 0.2s; display: inline-block; }
+#methodology[open] summary::before { transform: rotate(90deg); }
+#methodology summary:hover { background: #f1f5f9; color: var(--col-text-primary); }
 
-/* ── Stats bar ── */
-#stats-bar{display:flex;align-items:stretch;background:var(--navy2);border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto}
-.sbar-item{display:flex;flex-direction:column;justify-content:center;padding:8px 18px;border-right:1px solid rgba(255,255,255,.06);white-space:nowrap}
-.sbar-item:last-child{border-right:none}
-.sbar-label{font-size:9px;color:#475569;text-transform:uppercase;letter-spacing:.6px;font-weight:600;margin-bottom:2px}
-.sbar-val{font-size:15px;font-weight:700;font-family:var(--mono);color:#e2e8f0}
-
-/* ── Legend bar ── */
-#legend-bar{display:flex;align-items:center;gap:0;background:var(--surface);border-bottom:1px solid var(--border);padding:6px 16px;font-size:10px;flex-wrap:wrap;gap:14px}
-.leg{display:flex;align-items:center;gap:5px;color:var(--t2)}
-.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
-.leg-note{color:var(--t3);font-size:10px;margin-left:4px}
-
-/* ── Main layout ──
-   Page scrolls naturally; left panel sticks within viewport so destination
-   cards stay visible while scrolling the right panel's taller content. */
-#main{display:flex;align-items:flex-start}
-#left{width:34%;border-right:1px solid var(--border);padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg);position:sticky;top:0;max-height:100vh;overflow-y:auto}
-#right{flex:1;padding:12px;display:flex;flex-direction:column;gap:12px;background:var(--bg)}
-
-/* ── Destination cards ── */
-.dcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:12px 13px;box-shadow:var(--sh);transition:.2s}
-.dcard:hover{box-shadow:var(--sh2);border-color:var(--border2)}
-.dcard.gk-blocked{border-left:3px solid var(--blk)}
-.dcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px;gap:8px}
-.dname{font-weight:700;font-size:13px;color:var(--t1)}
-.dmeta{font-size:10px;color:var(--t3);text-align:right;line-height:1.5}
-.gk-badge{display:inline-block;background:var(--blk-light);color:var(--blk);font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;margin-top:3px}
-
-.pills{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px}
-.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:20px;font-size:10px;font-weight:600;cursor:default;letter-spacing:.1px}
-.pill.operational{background:var(--op-light);color:var(--op);border:1px solid #c3df8a}
-.pill.partial{background:var(--par-light);color:#b76e00;border:1px solid #f8d49a}
-.pill.blocked{background:var(--blk-light);color:var(--blk);border:1px solid #f5b5b4}
-.pill.unknown{background:var(--unk-light);color:var(--unk);border:1px solid #d0cece}
-
-.rbar-wrap{margin:6px 0 8px}
-.rbar-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
-.rbar-label{font-size:10px;color:var(--t3);font-weight:500}
-.rbar-pct{font-size:13px;font-weight:800;font-family:var(--mono)}
-.rbar-bg{height:7px;background:#eaecef;border-radius:4px;overflow:hidden}
-.rbar-fill{height:100%;border-radius:4px;transition:width .3s ease}
-
-.dstats{display:flex;gap:0;margin-top:8px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-.dstat{flex:1;display:flex;flex-direction:column;align-items:center;padding:5px 6px;background:#fafbfc;border-right:1px solid var(--border);gap:1px}
-.dstat:last-child{border-right:none}
-.dstat-v{font-size:12px;font-weight:700;font-family:var(--mono);color:var(--t1)}
-.dstat-l{font-size:9px;color:var(--t3);text-align:center}
-
-/* ── Panel cards ── */
-.pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;box-shadow:var(--sh)}
-.pcard-hdr{padding:10px 14px;border-bottom:1px solid var(--border);background:#fafbfc;display:flex;align-items:center;gap:8px}
-.pcard-hdr h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--t2)}
-.pcard-hdr .pill-tag{font-size:9px;padding:1px 7px;border-radius:10px;background:var(--sky-lt);color:var(--sky);border:1px solid var(--sky-bd);font-weight:600}
-.pcard-body{padding:12px 14px}
-
-/* ── Matrix ── */
-#matrix-scroll{overflow-x:auto}
-#mtx{width:100%;border-collapse:collapse;font-size:11px}
-#mtx th{padding:6px 8px;text-align:center;background:#f1f4f8;font-weight:600;border:1px solid var(--border);font-size:10px;color:var(--t2);white-space:nowrap}
-#mtx th.rl{text-align:left;min-width:130px}
-#mtx td{padding:6px 8px;text-align:center;border:1px solid var(--border);font-family:var(--mono);font-size:11px;vertical-align:middle}
-#mtx td.gl{text-align:left;font-family:var(--font);font-weight:600;background:#f8fafc;white-space:nowrap;font-size:11px;color:var(--t1)}
-#mtx td.gl .gsub{font-size:9px;color:var(--t3);font-weight:400}
-#mtx td.winner{outline:2px solid var(--sky);outline-offset:-2px;font-weight:800;position:relative}
-#mtx td.winner::after{content:'★';position:absolute;top:1px;right:2px;font-size:7px;color:var(--sky)}
-
-/* ── Outcome cards ── */
-.ocard{display:grid;grid-template-columns:1.6fr 1.4fr auto 1.2fr;gap:10px;padding:10px 4px;border-bottom:1px solid #f1f5f9;align-items:center}
-.ocard:last-child{border-bottom:none}
-.og-name{font-weight:700;font-size:12px;color:var(--t1)}
-.og-meta{font-size:10px;color:var(--t3);line-height:1.5;margin-top:2px}
-.odest{font-size:12px;font-weight:700;color:var(--t1)}
-.odest-sub{font-size:10px;color:var(--t3);line-height:1.6}
-.sr-big{font-size:22px;font-weight:800;font-family:var(--mono);line-height:1}
-.sr-sd{font-size:10px;color:var(--t3);margin-top:2px}
-.rbadge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600}
-.rbadge.high{background:var(--blk-light);color:#991b1b}
-.rbadge.medium{background:var(--par-light);color:#92400e}
-.rbadge.low{background:var(--op-light);color:#166534}
-.alt-note{font-size:10px;color:var(--t3);margin-top:5px}
-
-/* ── Bottom insight ── */
-#bottom{padding:12px 18px;background:var(--bg);border-top:1px solid var(--border)}
-#insight{background:var(--surface);border:1px solid var(--sky-bd);border-left:4px solid var(--sky);border-radius:var(--r2);padding:13px 16px}
-#insight h3{font-size:12px;font-weight:700;color:var(--sky);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-#insight-text p{font-size:12px;color:var(--t2);line-height:1.7;margin-bottom:6px}
-#insight-text p:last-child{margin-bottom:0}
-
-/* ── Methodology accordion ── */
-#meth{background:var(--surface);border-top:2px solid var(--border)}
-#meth summary{
-  list-style:none;display:flex;align-items:center;gap:8px;
-  padding:11px 20px;cursor:pointer;
-  background:var(--navy2);border-bottom:1px solid rgba(255,255,255,.07);
-  font-size:11px;font-weight:700;color:#94a3b8;
-  text-transform:uppercase;letter-spacing:.7px;user-select:none;
-  transition:.15s;
+.method-body {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
 }
-#meth summary::-webkit-details-marker{display:none}
-#meth summary .arr{font-size:9px;color:#475569;transition:transform .2s;display:inline-block}
-#meth[open] summary .arr{transform:rotate(90deg)}
-#meth summary:hover{background:#111827;color:#cbd5e1}
 
-.meth-body{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:16px;background:#f8fafc}
-.msec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:14px 16px}
-.msec h4{font-size:11px;font-weight:700;color:var(--t1);margin-bottom:9px;padding-bottom:7px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px}
-.mnum{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;background:var(--sky);color:white;border-radius:50%;font-size:9px;font-weight:800;flex-shrink:0}
-.msec p,.msec li{font-size:11.5px;color:var(--t2);line-height:1.7;margin-bottom:5px}
-.msec ul{padding-left:14px;margin:4px 0}
-.msec li{margin-bottom:3px}
-.msec p:last-child,.msec li:last-child{margin-bottom:0}
-.msec strong{color:var(--t1)}
+.method-section {
+  background: #f8fafc;
+  border: 1px solid var(--col-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.method-section h4 {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--col-text-primary);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--col-border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.method-section h4 .mnum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  background: var(--col-accent);
+  color: white;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.method-section p, .method-section li {
+  font-size: 11.5px;
+  color: var(--col-text-secondary);
+  line-height: 1.65;
+  margin-bottom: 5px;
+}
+.method-section ul { padding-left: 14px; margin-bottom: 5px; }
+.method-section li { margin-bottom: 3px; }
+.method-section p:last-child { margin-bottom: 0; }
+.method-section strong { color: var(--col-text-primary); }
 
-.code{background:var(--navy2);color:#e2e8f0;border-radius:6px;padding:10px 13px;font-family:var(--mono);font-size:11px;line-height:1.8;margin:8px 0;white-space:pre;overflow-x:auto}
-.cv{color:#93c5fd}.co{color:#fbbf24}.cg{color:#86efac}.cc{color:#475569}
+.formula-block {
+  background: #1a2332;
+  color: #e2e8f0;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 8px 0;
+  white-space: pre;
+}
+.formula-var { color: #93c5fd; }
+.formula-op  { color: #fbbf24; }
+.formula-val { color: #86efac; }
+.formula-comment { color: #64748b; }
 
-.mtbl{width:100%;border-collapse:collapse;font-size:11px;margin-top:6px}
-.mtbl th{text-align:left;padding:4px 8px;background:#f1f4f8;color:var(--t1);font-weight:700;border:1px solid var(--border);font-size:10px}
-.mtbl td{padding:4px 8px;border:1px solid var(--border);color:var(--t2);vertical-align:top;font-size:11px}
-.mtbl td:first-child{font-weight:600;color:var(--t1);white-space:nowrap}
-.mfull{grid-column:1/-1}
-
-/* scrollbar polish */
-#left::-webkit-scrollbar{width:5px}
-#left::-webkit-scrollbar-track{background:transparent}
-#left::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
+.method-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-top: 6px;
+}
+.method-table th {
+  text-align: left;
+  padding: 4px 8px;
+  background: #e8edf2;
+  color: var(--col-text-primary);
+  font-weight: 600;
+  border: 1px solid var(--col-border);
+}
+.method-table td {
+  padding: 4px 8px;
+  border: 1px solid var(--col-border);
+  color: var(--col-text-secondary);
+  vertical-align: top;
+}
+.method-table td:first-child { font-weight: 500; color: var(--col-text-primary); white-space: nowrap; }
+.method-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: white;
+}
+.method-tag.gk   { background: #7c3aed; }
+.method-tag.norm { background: #374151; }
 </style>
 </head>
 <body>
 
-<!-- ══ HEADER ══ -->
-<div id="hdr">
-  <div id="hdr-top">
+<div id="header">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start">
     <div>
-      <h1>Evacuation Readiness &amp; <span>Uncertainty</span> Simulator</h1>
-      <div class="sub">PhD research instrument &nbsp;·&nbsp; civilian protection in conflict &nbsp;·&nbsp; destination readiness &amp; decision-making under uncertainty</div>
+      <h1>Evacuation Readiness &amp; Uncertainty Simulator</h1>
+      <div class="subtitle">PhD research instrument — civilian protection in conflict &nbsp;·&nbsp; destination readiness &amp; decision-making under uncertainty</div>
+      <div class="subtitle" style="margin-top:3px;color:#64748b">Created: June 2026</div>
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start;padding-top:2px">
-      <span class="badge">Seeded RNG</span>
-      <span class="badge">Monte Carlo N=100</span>
-      <span class="badge">No external dependencies</span>
-    </div>
+    <a href="explainer.html" style="flex-shrink:0;font-size:14px;font-weight:700;color:#ffffff;background:var(--col-accent);text-decoration:none;border:1px solid #3b82f6;border-radius:8px;padding:10px 20px;white-space:nowrap;box-shadow:0 2px 6px rgba(37,99,235,.35)">📘 About this tool →</a>
   </div>
-  <div id="hdr-controls">
-    <div class="ctrl">
+  <div class="header-controls">
+    <div class="control-group">
       <label>Seed</label>
       <input type="number" id="seed-input" value="42" min="1" max="999999">
     </div>
-    <div class="ctrl">
-      <label>Destinations</label>
+    <div class="control-group">
+      <label>Destinations (N)</label>
       <input type="number" id="n-dest" value="8" min="2" max="16">
     </div>
-    <div class="ctrl">
-      <label>Evacuee groups</label>
+    <div class="control-group">
+      <label>Evacuee groups (M)</label>
       <input type="number" id="n-groups" value="3" min="1" max="8">
     </div>
-    <button id="btn-gen">Generate Scenario</button>
-    <div class="unc-wrap">
-      <div class="ulabel">Field Uncertainty</div>
-      <div class="unc-track">
-        <span class="lo">Perfect info</span>
-        <input type="range" id="unc-slider" min="0" max="100" value="30" step="1">
-        <span class="hi">Fog of war</span>
-      </div>
-      <span id="unc-val">30%</span>
+    <button id="btn-generate">Generate Scenario</button>
+    <button id="btn-copy" title="Copy a shareable URL that reproduces this exact scenario (seed, N, M, uncertainty level) — open it anywhere to regenerate the same result">📋 Copy link</button>
+    <div class="uncertainty-section">
+      <label>Field Uncertainty</label>
+      <input type="range" id="uncertainty-slider" min="0" max="100" value="30" step="1">
+      <span id="uncertainty-value">30%</span>
     </div>
   </div>
 </div>
 
-<!-- ══ STATS BAR ══ -->
 <div id="stats-bar">
-  <div class="sbar-item"><div class="sbar-label">Destinations</div><div class="sbar-val" id="s-ndest">—</div></div>
-  <div class="sbar-item"><div class="sbar-label">Viable (≥20% ready)</div><div class="sbar-val" id="s-viable">—</div></div>
-  <div class="sbar-item"><div class="sbar-label">GK blocked sites</div><div class="sbar-val" id="s-gkblk">—</div></div>
-  <div class="sbar-item"><div class="sbar-label">Evacuee groups</div><div class="sbar-val" id="s-ngrp">—</div></div>
-  <div class="sbar-item"><div class="sbar-label">Total evacuees</div><div class="sbar-val" id="s-ppl">—</div></div>
-  <div class="sbar-item"><div class="sbar-label">Mean MC success</div><div class="sbar-val" id="s-sr">—</div></div>
-  <div class="sbar-item"><div class="sbar-label">Uncertainty level</div><div class="sbar-val" id="s-unc">—</div></div>
+  <div class="stat-item"><span class="stat-label">Destinations</span><span class="stat-value" id="stat-ndest">—</span></div>
+  <div class="stat-item"><span class="stat-label">Viable (≥20%)</span><span class="stat-value" id="stat-viable">—</span></div>
+  <div class="stat-item"><span class="stat-label">Evacuee groups</span><span class="stat-value" id="stat-ngroups">—</span></div>
+  <div class="stat-item"><span class="stat-label">Total evacuees</span><span class="stat-value" id="stat-evacuees">—</span></div>
+  <div class="stat-item"><span class="stat-label">Mean MC success</span><span class="stat-value" id="stat-success">—</span></div>
+  <div class="stat-item"><span class="stat-label">Uncertainty</span><span class="stat-value" id="stat-unc">—</span></div>
+  <div class="stat-item"><span class="stat-label">GK blocked sites</span><span class="stat-value" id="stat-gkblocked">—</span></div>
 </div>
 
-<!-- ══ LEGEND ══ -->
-<div id="legend-bar">
-  <div class="leg"><div class="leg-dot" style="background:var(--op)"></div>Operational</div>
-  <div class="leg"><div class="leg-dot" style="background:var(--par)"></div>Partial</div>
-  <div class="leg"><div class="leg-dot" style="background:var(--blk)"></div>Blocked</div>
-  <div class="leg"><div class="leg-dot" style="background:var(--unk)"></div>Unknown</div>
-  <div class="leg-note">★ Gatekeeper factor — if blocked, readiness hard-capped at 20%</div>
+<div class="factor-legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--col-operational)"></div>Operational</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--col-partial)"></div>Partial</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--col-blocked)"></div>Blocked</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--col-unknown)"></div>Unknown</div>
+  <span style="color:#6b7280;margin-left:8px">★ = gatekeeper factor (blocked → hard cap at 20% readiness)</span>
+  <span style="color:#6b7280;margin-left:8px">·&nbsp; "Unwilling" (Willingness ★, blocked) = host has explicitly declined — not the same as "Unknown" (not yet assessed)</span>
 </div>
 
-<!-- ══ MAIN ══ -->
 <div id="main">
-  <!-- LEFT: destination cards -->
-  <div id="left">
+  <div id="left-panel">
+    <div class="section-hdr" style="padding:0 2px 8px">Destinations <a class="qmark" href="explainer.html#card-3" target="_blank" rel="noopener" title="What are readiness factors and statuses?">?</a></div>
     <div id="dest-cards"></div>
   </div>
-
-  <!-- RIGHT: matrix + outcomes + chart -->
-  <div id="right">
-
-    <div class="pcard">
-      <div class="pcard-hdr">
-        <h3>Assignment Matrix</h3>
-        <span class="pill-tag">Composite scores · heat-mapped · ★ = assigned</span>
-      </div>
-      <div class="pcard-body" style="padding:10px">
-        <div id="matrix-scroll"><div id="matrix-body"></div></div>
-      </div>
+  <div id="right-panel">
+    <div class="panel-card">
+      <div class="section-hdr">Assignment Matrix — Composite Scores &amp; Monte Carlo Success Rates (mean ± 1 SD) <a class="qmark" href="explainer.html#card-6" target="_blank" rel="noopener" title="How is the assignment algorithm scored?">?</a></div>
+      <div id="matrix-scroll"><div id="matrix-container"></div></div>
     </div>
-
-    <div class="pcard">
-      <div class="pcard-hdr"><h3>Outcome Summary per Evacuee Group</h3></div>
-      <div class="pcard-body"><div id="outcome-body"></div></div>
+    <div class="panel-card">
+      <div class="section-hdr">Outcome Summary per Evacuee Group — sorted by urgency <a class="qmark" href="explainer.html#card-5" target="_blank" rel="noopener" title="How is Monte Carlo success rate computed?">?</a></div>
+      <div id="outcome-container"></div>
     </div>
-
-    <div class="pcard">
-      <div class="pcard-hdr">
-        <h3>Uncertainty Impact</h3>
-        <span class="pill-tag">MC success rate vs field uncertainty (0 → 100%)</span>
-      </div>
-      <div class="pcard-body" style="padding-bottom:8px">
-        <svg id="unc-chart" style="width:100%;display:block"></svg>
-      </div>
+    <div class="panel-card">
+      <div class="section-hdr">Alerts <a class="qmark" href="explainer.html#card-5" target="_blank" rel="noopener" title="What triggers a critical vs warning alert?">?</a></div>
+      <div id="alerts-container"></div>
     </div>
-
+    <div class="panel-card">
+      <div class="section-hdr">Uncertainty Impact — MC Success Rate vs Field Uncertainty (0 → 100%) <a class="qmark" href="explainer.html#card-4" target="_blank" rel="noopener" title="How does the uncertainty model work?">?</a></div>
+      <svg id="unc-chart" style="width:100%;display:block"></svg>
+    </div>
+    <div class="panel-card">
+      <div class="section-hdr">Factor Information Value — Where Better Intelligence Helps Most <a class="qmark" href="explainer.html#card-7" target="_blank" rel="noopener" title="Why does this matter for the research argument?">?</a></div>
+      <div id="info-value-container"></div>
+    </div>
   </div>
 </div>
 
-<!-- ══ INSIGHT ══ -->
-<div id="bottom">
-  <div id="insight">
-    <h3>&#128161; AI Role in Civilian Protection — Simulation Findings</h3>
+<div id="bottom-panel">
+  <div id="insight-box">
+    <h3>AI Role in Civilian Protection — Simulation Findings <a class="qmark" href="explainer.html#card-7" target="_blank" rel="noopener" title="Read the full research argument">?</a></h3>
     <div id="insight-text"><p>Generating scenario…</p></div>
   </div>
 </div>
 
-<!-- ══ METHODOLOGY ══ -->
-<details id="meth">
-  <summary><span class="arr">▶</span>&nbsp; Methodology &amp; Model Documentation</summary>
-  <div class="meth-body">
+<details id="params-panel">
+  <summary>⚙ Model Parameters — current values <a class="qmark" href="explainer.html#card-2" target="_blank" rel="noopener" title="What do these controls do?" onclick="event.stopPropagation()">?</a></summary>
+  <div style="padding:16px 20px">
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr>
+        <th style="text-align:left;padding:5px 8px;background:#f8fafc;border:1px solid var(--col-border);font-weight:600;color:var(--col-text-primary)">Parameter</th>
+        <th style="text-align:left;padding:5px 8px;background:#f8fafc;border:1px solid var(--col-border);font-weight:600;color:var(--col-text-primary)">Value</th>
+        <th style="text-align:left;padding:5px 8px;background:#f8fafc;border:1px solid var(--col-border);font-weight:600;color:var(--col-text-primary)">Controls</th>
+      </tr></thead>
+      <tbody id="params-tbody"></tbody>
+    </table>
+  </div>
+</details>
 
-    <div class="msec">
+<details id="methodology">
+  <summary>Methodology &amp; Model Documentation</summary>
+  <div class="method-body">
+
+    <!-- 1. Readiness Scoring -->
+    <div class="method-section">
       <h4><span class="mnum">1</span> Readiness Scoring Model</h4>
-      <p>Destination readiness is a <strong>confidence-weighted average</strong> of seven factor scores. Two factors are <strong>gatekeepers</strong> (weight 2×) — non-substitutable prerequisites under IHL: a physically dangerous or legally inaccessible destination cannot be made viable by strong food supply or willing hosts.</p>
-      <div class="code"><span class="cv">readiness</span> <span class="co">=</span> <span class="co">(</span>Σ <span class="cv">w_i × score_i</span><span class="co">)</span> / Σ <span class="cv">w_i</span>
-<span class="cc">w = 2 (gatekeeper)  |  w = 1 (standard)</span>
+      <p>Destination readiness is computed as a <strong>weighted average</strong> of seven factor scores. Three factors — Security, Local Authority Consent, and Willingness — are designated <strong>gatekeepers</strong> and receive double weight, reflecting their role as non-substitutable prerequisites: a destination that is physically dangerous, legally inaccessible, <em>or whose host community has explicitly refused to receive evacuees</em> cannot be made viable by strong food supply or shelter alone. Willingness was added to the gatekeeper set because an unwilling host is as disqualifying in practice as a blocked checkpoint — modelling it as a standard (weight-1) factor previously let strong shelter/food/medical scores mask an unviable site.</p>
+      <p style="margin-top:6px"><strong>Unknown vs. Unwilling:</strong> for the Willingness factor specifically, a <code style="font-family:var(--font-mono);font-size:10px;background:#f1f4f8;padding:1px 4px;border-radius:3px">blocked</code> status is displayed as <strong>"Unwilling"</strong> rather than the generic "Blocked" — a confirmed refusal by the host community — which is a materially different epistemic state from <strong>"Unknown"</strong> (willingness has simply not been assessed yet). Both still score 0 in the readiness formula, but only "Unwilling" is a confirmed exclusion; "Unknown" is an intelligence gap that AI-assisted assessment could close.</p>
+      <div class="formula-block"><span class="formula-var">readiness</span> <span class="formula-op">=</span> <span class="formula-op">(</span>Σ <span class="formula-var">w<sub>i</sub></span> <span class="formula-op">×</span> <span class="formula-var">score<sub>i</sub></span><span class="formula-op">)</span> <span class="formula-op">/</span> Σ <span class="formula-var">w<sub>i</sub></span>
 
-<span class="cc">If any gatekeeper BLOCKED:</span>
-<span class="cv">readiness</span> <span class="co">=</span> min<span class="co">(</span><span class="cv">readiness</span>, <span class="cg">0.20</span><span class="co">)</span></div>
-      <table class="mtbl">
-        <thead><tr><th>Status</th><th>Score</th><th>Notes</th></tr></thead>
+<span class="formula-comment">w = 2 (gatekeeper)  |  w = 1 (standard)</span>
+
+<span class="formula-comment">If any gatekeeper is BLOCKED:</span>
+<span class="formula-var">readiness</span> <span class="formula-op">=</span> min<span class="formula-op">(</span><span class="formula-var">readiness</span>, <span class="formula-val">0.20</span><span class="formula-op">)</span></div>
+      <table class="method-table">
+        <thead><tr><th>Status</th><th>Score</th><th>Rationale</th></tr></thead>
         <tbody>
           <tr><td>Operational</td><td>1.0 × conf</td><td>Fully functional; confidence-scaled</td></tr>
-          <tr><td>Partial</td><td>0.5 × conf</td><td>Degraded; confidence-scaled</td></tr>
-          <tr><td>Blocked</td><td>0.0</td><td>Non-functional; triggers GK cap</td></tr>
+          <tr><td>Partial</td><td>0.5 × conf</td><td>Degraded function; confidence-scaled</td></tr>
+          <tr><td>Blocked</td><td>0.0</td><td>Non-functional; gatekeeper triggers cap</td></tr>
           <tr><td>Unknown</td><td>0.30 × (0.5 + 0.5·conf)</td><td>Epistemic conservatism — see §2</td></tr>
         </tbody>
       </table>
     </div>
 
-    <div class="msec">
+    <!-- 2. Uncertainty Model -->
+    <div class="method-section">
       <h4><span class="mnum">2</span> Uncertainty Model</h4>
-      <p>Uncertainty operates at two levels. The <strong>Field Uncertainty</strong> slider scales all factor confidences multiplicatively:</p>
-      <div class="code"><span class="cv">effectiveConf</span> <span class="co">=</span> <span class="cv">baseConf</span> <span class="co">× (</span><span class="cg">1</span> <span class="co">−</span> <span class="cv">fieldUncertainty</span><span class="co">)</span></div>
-      <p><strong>Unknown status</strong> encodes a key epistemic distinction: a <em>known unknown</em> (high-confidence "I don't know") is less dangerous than an <em>unknown unknown</em> (low-confidence, unreliable assessment):</p>
-      <div class="code"><span class="cv">score_unknown</span> <span class="co">=</span> <span class="cg">0.30</span> <span class="co">× (</span><span class="cg">0.5</span> <span class="co">+</span> <span class="cg">0.5</span> <span class="co">×</span> <span class="cv">effectiveConf</span><span class="co">)</span>
+      <p>Uncertainty operates at two levels:</p>
+      <p><strong>Factor-level confidence</strong> — each factor carries a <em>base confidence</em> value (0–1) generated at scenario creation, reflecting how well-assessed that factor is. The global <strong>Field Uncertainty</strong> slider scales all confidences multiplicatively:</p>
+      <div class="formula-block"><span class="formula-var">effectiveConf</span> <span class="formula-op">=</span> <span class="formula-var">baseConf</span> <span class="formula-op">×</span> <span class="formula-op">(</span><span class="formula-val">1</span> <span class="formula-op">−</span> <span class="formula-var">fieldUncertainty</span><span class="formula-op">)</span></div>
+      <p><strong>Unknown status treatment</strong> encodes a key epistemic distinction: <em>a known unknown is less dangerous than an unknown unknown</em>. A factor assessed as "unknown" with high confidence (we are sure we don't know) scores higher than the same status with low confidence (we are not even sure our ignorance is accurate):</p>
+      <div class="formula-block"><span class="formula-var">score<sub>unknown</sub></span> <span class="formula-op">=</span> <span class="formula-val">0.30</span> <span class="formula-op">×</span> <span class="formula-op">(</span><span class="formula-val">0.5</span> <span class="formula-op">+</span> <span class="formula-val">0.5</span> <span class="formula-op">×</span> <span class="formula-var">effectiveConf</span><span class="formula-op">)</span>
 
-<span class="cc">conf=1.0 → score=0.30  (we know we don't know)</span>
-<span class="cc">conf=0.0 → score=0.15  (we don't know what we don't know)</span></div>
-      <p>This models the real-world asymmetry: a field team reporting "unassessed" provides actionable intelligence; a report produced under unreliable conditions does not.</p>
+<span class="formula-comment">effectiveConf = 1.0 → score = 0.30  (known unknown)</span>
+<span class="formula-comment">effectiveConf = 0.0 → score = 0.15  (unknown unknown)</span></div>
+      <p>This models the real-world asymmetry in which a field team that reports "we could not assess food supply" provides actionable information, whereas a report produced under conditions where the team itself was unreliable provides less.</p>
     </div>
 
-    <div class="msec">
+    <!-- 3. Monte Carlo -->
+    <div class="method-section">
       <h4><span class="mnum">3</span> Monte Carlo Outcome Simulation</h4>
-      <p>For each (group, destination) pair, <strong>100 Monte Carlo runs</strong> simulate outcome distributions under field uncertainty. Each run independently perturbs every factor status:</p>
-      <div class="code"><span class="cv">P(perturb)</span> <span class="co">=</span> <span class="cg">0.85</span> <span class="co">× (</span><span class="cg">1</span> <span class="co">−</span> <span class="cv">effectiveConf</span><span class="co">)</span>
-<span class="cc">If perturbed: status shifts ±1 ordinal level</span>
-<span class="cc">  operational ↔ partial ↔ blocked ↔ unknown</span></div>
-      <p><strong>Success</strong> in a single run requires all three conjunctive conditions:</p>
+      <p>For each (evacuee group, destination) pair, <strong>500 Monte Carlo runs</strong> simulate the outcome distribution arising from field uncertainty. In each run, every factor's assessed status is independently subjected to a perturbation test:</p>
+      <div class="formula-block"><span class="formula-var">P(perturb)</span> <span class="formula-op">=</span> <span class="formula-val">0.85</span> <span class="formula-op">×</span> <span class="formula-op">(</span><span class="formula-val">1</span> <span class="formula-op">−</span> <span class="formula-var">effectiveConf</span><span class="formula-op">)</span>
+
+<span class="formula-comment">If perturbed: status shifts ±1 level</span>
+<span class="formula-comment">  operational ↔ partial ↔ blocked ↔ unknown</span></div>
+      <p><strong>Success</strong> in a single run requires all three conditions:</p>
       <ul>
         <li>Readiness ≥ <strong>40%</strong> (minimum viability threshold)</li>
-        <li>Destination capacity ≥ group size</li>
-        <li>No gatekeeper blocked (legal/security access maintained)</li>
+        <li>Destination capacity ≥ group size (physical absorption)</li>
+        <li>No gatekeeper factor blocked (legal/security access maintained)</li>
       </ul>
-      <p>Reported <strong>success rate</strong> = proportion of runs meeting all three. Standard deviation quantifies outcome volatility — high SD indicates a fragile scenario.</p>
+      <p>The reported <strong>success rate</strong> is the proportion of runs meeting all three criteria. Standard deviation across runs quantifies outcome uncertainty — high SD indicates a volatile scenario where small real-world changes could flip the outcome.</p>
     </div>
 
-    <div class="msec">
+    <!-- 4. Assignment Algorithm -->
+    <div class="method-section">
       <h4><span class="mnum">4</span> Assignment Algorithm</h4>
-      <p>Each evacuee group is assigned to the destination with the highest <strong>composite score</strong>:</p>
-      <div class="code"><span class="cv">composite</span> <span class="co">=</span>
-  <span class="cg">0.40</span> <span class="co">×</span> <span class="cv">readiness</span>
-<span class="co">+</span> <span class="cg">0.30</span> <span class="co">×</span> <span class="cv">capacity_fit</span>    <span class="cc">min(1, cap/size)</span>
-<span class="co">+</span> <span class="cg">0.20</span> <span class="co">×</span> <span class="cv">proximity</span>       <span class="cc">1 − dist/max_dist</span>
-<span class="co">+</span> <span class="cg">0.10</span> <span class="co">×</span> <span class="cv">vuln_match</span>      <span class="cc">1.0 if medical=op & needs, else 0.5</span></div>
-      <p>Weights reflect humanitarian priority ordering: protection quality → physical fit → operational burden → population needs. Capacity fit is capped at 1.0 to prevent over-rewarding oversized sites.</p>
+      <p>Groups are first sorted by urgency (immediate → urgent → can-wait), then assigned greedily in that order. Each group is placed at the highest-scoring destination with sufficient remaining capacity. This prevents capacity contention, ensures critical groups are prioritised, and may result in an UNASSIGNED status if all sites are full.</p>
+      <div class="formula-block"><span class="formula-var">composite</span> <span class="formula-op">=</span>
+  <span class="formula-val">0.40</span> <span class="formula-op">×</span> <span class="formula-var">readiness</span>
+<span class="formula-op">+</span> <span class="formula-val">0.30</span> <span class="formula-op">×</span> <span class="formula-var">capacity_fit</span>
+<span class="formula-op">+</span> <span class="formula-val">0.20</span> <span class="formula-op">×</span> <span class="formula-var">proximity</span>
+<span class="formula-op">+</span> <span class="formula-val">0.10</span> <span class="formula-op">×</span> <span class="formula-var">vulnerability_match</span>
+
+<span class="formula-var">capacity_fit</span>       <span class="formula-op">=</span> min<span class="formula-op">(</span><span class="formula-val">1</span>, dest_capacity <span class="formula-op">/</span> group_size<span class="formula-op">)</span>
+<span class="formula-var">proximity</span>          <span class="formula-op">=</span> <span class="formula-val">1</span> <span class="formula-op">−</span> <span class="formula-op">(</span>distance <span class="formula-op">/</span> max_distance<span class="formula-op">)</span>
+<span class="formula-var">vulnerability_match</span> <span class="formula-op">=</span> <span class="formula-val">1.0</span> <span class="formula-comment">if medical=operational &amp; special needs</span>
+                    <span class="formula-op">=</span> <span class="formula-val">0.5</span> <span class="formula-comment">otherwise</span></div>
+      <p>Weights reflect the priority ordering in humanitarian evacuation planning: protection quality first, physical fit second, operational burden third, population needs fourth.</p>
     </div>
 
-    <div class="msec">
-      <h4><span class="mnum">5</span> Seeded RNG &amp; Synthetic Data</h4>
-      <p>All values use the <strong>Park-Miller Linear Congruential Generator</strong> — no <code style="font-family:var(--mono);font-size:10.5px;background:#f1f4f8;padding:1px 4px;border-radius:3px">Math.random()</code> anywhere:</p>
-      <div class="code"><span class="cv">s_{n+1}</span> <span class="co">=</span> <span class="co">(</span><span class="cv">s_n</span> <span class="co">×</span> <span class="cg">16807</span><span class="co">)</span> mod <span class="cg">2147483647</span>
-<span class="cc">Period: 2³¹ − 2 ≈ 2.1 × 10⁹</span>
-<span class="cc">Ref: Park & Miller (1988), CACM 31(10)</span></div>
-      <p>A fixed seed guarantees full reproducibility — any peer reviewer can regenerate any scenario exactly from its seed number. Destination capacity uses an <strong>exponential distribution</strong> (λ=3, mapped [200–5000]) reflecting the realistic skew of humanitarian site sizes.</p>
+    <!-- 5. Synthetic Data -->
+    <div class="method-section">
+      <h4><span class="mnum">5</span> Synthetic Data Engine</h4>
+      <p>All data is generated from a <strong>seeded pseudo-random number generator</strong> using the Park-Miller Linear Congruential Generator (LCG):</p>
+      <div class="formula-block"><span class="formula-var">s<sub>n+1</sub></span> <span class="formula-op">=</span> <span class="formula-op">(</span><span class="formula-var">s<sub>n</sub></span> <span class="formula-op">×</span> <span class="formula-val">16807</span><span class="formula-op">)</span> mod <span class="formula-val">2147483647</span>
+
+<span class="formula-comment">Period: 2³¹ − 2 ≈ 2.1 × 10⁹</span>
+<span class="formula-comment">Source: Park &amp; Miller (1988), CACM 31(10)</span></div>
+      <p>Using a seeded RNG means every scenario is <strong>fully reproducible</strong> by seed number — a critical requirement for thesis research where peer reviewers must be able to regenerate results exactly.</p>
+      <p>Destination capacity follows an <strong>exponential distribution</strong> (λ = 3, mapped to [200, 5000]) to reflect the realistic skew of humanitarian site sizes: many small sites, few large camps. Factor status distributions are weighted differently for gatekeepers (more likely impaired in active conflict) versus standard factors.</p>
     </div>
 
-    <div class="msec">
+    <!-- 6. Evacuee Groups -->
+    <div class="method-section">
       <h4><span class="mnum">6</span> Evacuee Group Archetypes</h4>
-      <p>Groups draw from eight archetypes grounded in ICRC field taxonomy and IHL protected-person categories. Fixed vulnerability and urgency reflect empirical priority hierarchies; only size is randomised.</p>
-      <table class="mtbl">
+      <p>Groups are drawn from eight ecologically valid archetypes grounded in ICRC field taxonomy and IHL protected-person categories. Each archetype has fixed vulnerability, special-needs, and urgency properties; only group size is randomised per scenario.</p>
+      <table class="method-table">
         <thead><tr><th>Archetype</th><th>Vuln.</th><th>Needs</th><th>Urgency</th></tr></thead>
         <tbody>
-          <tr><td>Elderly &amp; mobility-impaired</td><td>5/5</td><td>mobility</td><td>immediate</td></tr>
-          <tr><td>Wounded &amp; medical cases</td><td>5/5</td><td>medical</td><td>immediate</td></tr>
-          <tr><td>Unaccompanied minors</td><td>5/5</td><td>medical</td><td>immediate</td></tr>
-          <tr><td>Families with children</td><td>4/5</td><td>—</td><td>urgent</td></tr>
-          <tr><td>Pregnant women</td><td>4/5</td><td>medical</td><td>urgent</td></tr>
-          <tr><td>Journalists &amp; aid workers</td><td>2/5</td><td>—</td><td>urgent</td></tr>
-          <tr><td>Unaccompanied adults</td><td>2/5</td><td>—</td><td>can-wait</td></tr>
-          <tr><td>Mixed general population</td><td>2/5</td><td>—</td><td>can-wait</td></tr>
+          <tr><td>Elderly &amp; mobility-impaired</td><td>5</td><td>mobility</td><td>immediate</td></tr>
+          <tr><td>Families with children</td><td>4</td><td>—</td><td>urgent</td></tr>
+          <tr><td>Wounded &amp; medical cases</td><td>5</td><td>medical</td><td>immediate</td></tr>
+          <tr><td>Unaccompanied minors</td><td>5</td><td>medical</td><td>immediate</td></tr>
+          <tr><td>Pregnant women</td><td>4</td><td>medical</td><td>urgent</td></tr>
+          <tr><td>Unaccompanied adults</td><td>2</td><td>—</td><td>can-wait</td></tr>
+          <tr><td>Mixed general population</td><td>2</td><td>—</td><td>can-wait</td></tr>
+          <tr><td>Journalists &amp; aid workers</td><td>2</td><td>—</td><td>urgent</td></tr>
         </tbody>
       </table>
+      <p style="margin-top:6px">The <em>vulnerability_match</em> sub-score in §4 rewards destinations with operational medical capacity when a group has medical or mobility needs — operationalising the IHL principle of proportionate protection for the most vulnerable.</p>
     </div>
 
-    <div class="msec mfull">
-      <h4><span class="mnum">7</span> Assumptions &amp; Limitations</h4>
+    <!-- 7. Design decisions & limitations -->
+    <div class="method-section" style="grid-column: 1 / -1;">
+      <h4><span class="mnum">7</span> Modelling Assumptions &amp; Limitations</h4>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div>
-          <p><strong>Known modelling simplifications</strong></p>
+          <p><strong>Assumptions</strong></p>
           <ul>
-            <li>Factor statuses treated as independent — real-world correlations (e.g. security and authority consent co-vary) are not modelled.</li>
-            <li>The 40% readiness threshold is an operational approximation; it should be calibrated against empirical data in applied use.</li>
-            <li>Status perturbation shifts exactly one ordinal level; real mis-assessments may skip levels.</li>
-            <li>Groups are assigned independently — no capacity contention is modelled between groups assigned to the same destination.</li>
-            <li>Distance is a proxy for operational burden; routing constraints (checkpoints, fuel, road access) are not captured.</li>
+            <li>Factor statuses are treated as independent — real-world correlation (e.g. security and authority consent often co-vary) is not modelled.</li>
+            <li>The 40% readiness success threshold is an operational approximation; the exact threshold should be calibrated against field data in applied use.</li>
+            <li>Status perturbation shifts by exactly one ordinal level — this is a simplification; real mis-assessments may jump multiple levels (e.g. operational reported as blocked).</li>
+            <li>Greedy urgency-ordered assignment prevents capacity contention but does not optimise globally — a group assigned early may block a better match for a later group.</li>
+            <li>Distance is used as a proxy for operational burden; real routing constraints (road access, checkpoints, fuel) are not modelled.</li>
           </ul>
         </div>
         <div>
-          <p><strong>Intended use &amp; scope</strong></p>
+          <p><strong>Scope &amp; intended use</strong></p>
           <ul>
-            <li>This is a <em>conceptual demonstration instrument</em>, not an operational planning system. Outputs require validation against empirical field data before any real-world use.</li>
-            <li>Designed to illustrate uncertainty propagation through an evacuation chain and to support the argument that AI-assisted real-time field assessment improves outcome predictability.</li>
-            <li>MC N=100 is sufficient for directional insight; production use warrants N≥1000 for tight confidence intervals.</li>
-            <li>All simulation parameters live in the <code style="font-family:var(--mono);font-size:10px;background:#f1f4f8;padding:1px 4px;border-radius:3px">PARAMS</code> constant at the top of the script — adjustable for sensitivity analysis without touching any other code.</li>
+            <li>This is a <em>conceptual demonstration tool</em>, not a decision-support system. Outputs are not suitable for real operational planning without validation against empirical data.</li>
+            <li>The tool is designed to illustrate how uncertainty propagates through an evacuation chain and to support the thesis argument that AI-assisted field assessment would improve outcome predictability.</li>
+            <li>All random values use the seeded RNG — <code>Math.random()</code> is not called anywhere, ensuring full reproducibility.</li>
+            <li>MC runs (N=500) provide tighter confidence intervals than the prior N=100. Information value estimates use N=100 for speed; treat as directional.</li>
           </ul>
+          <p style="margin-top:8px"><strong>Parameter reference</strong> — all values are in the <code>PARAMS</code> constant at the top of the script and are also displayed in the ⚙ Model Parameters panel above.</p>
         </div>
       </div>
+    </div>
+
+    <!-- 8. Data sources -->
+    <div class="method-section" style="grid-column: 1 / -1;">
+      <h4><span class="mnum">8</span> Data Sources &amp; References</h4>
+      <p>This tool uses <strong>no real-world datasets</strong> — every destination, evacuee group, and factor status is generated synthetically by the seeded RNG (§5). Nothing here is imported or fitted from real evacuation records. The sources below inform <strong>parameter design</strong> — which factors exist, which are gatekeepers, and where thresholds originate — not the data itself.</p>
+      <table class="method-table">
+        <thead><tr><th>Source</th><th>Used for</th></tr></thead>
+        <tbody>
+          <tr><td>Park &amp; Miller (1988), CACM 31(10)</td><td>Park-Miller LCG — the seeded random number generator underlying every synthetic value (§5)</td></tr>
+          <tr><td>ICRC (2013), <em>Violence and the use of force</em></td><td>IHL framework grounding the Security gatekeeper factor</td></tr>
+          <tr><td>Additional Protocol I (1977), Art. 12 &amp; 58</td><td>Protection of medical units (Medical capacity) and precautions against attack (Security)</td></tr>
+          <tr><td>IASC (2007) Guidelines</td><td>Host-authority consent framework grounding the Authority consent gatekeeper factor</td></tr>
+          <tr><td>SPHERE Handbook (2018, 4th ed.)</td><td>Minimum standards — 3.5m²/person shelter, 15L/person/day water — behind the Shelter and Food &amp; water factors</td></tr>
+          <tr><td>UNHCR (2007), <em>Handbook for Emergencies</em> (3rd ed.)</td><td>Source of the 40% minimum readiness viability threshold (§3, SUCCESS_MIN_READINESS)</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:8px">Full citation detail is in <code style="font-family:var(--font-mono);font-size:10.5px;background:#f1f4f8;padding:1px 4px;border-radius:3px">Evacuation_Simulator_Methodology.docx</code> §14 (References) in the project repository. This table is a summary of that document, checked directly against it — the methodology doc is authoritative if the two ever diverge. Note the Willingness factor's gatekeeper promotion (§1) and the 500-run Monte Carlo default (§3) postdate methodology doc v1.0 and are not yet reflected there.</p>
     </div>
 
   </div>
@@ -433,422 +517,849 @@ body{font-family:var(--font);background:var(--bg);color:var(--t1);font-size:13px
 <script>
 'use strict';
 
-// ── PARAMS ── all tunable constants in one place for sensitivity analysis
+// ============================================================
+// SIMULATION CONSTANTS
+// ============================================================
 const PARAMS = {
-  MC_RUNS:           100,
-  UNC_STEPS:         10,    // uncertainty curve points: 0%, 10%, … 100%
-  GK_WEIGHT:         2,
-  NORM_WEIGHT:       1,
-  GK_CAP:            0.20,
-  SCORE_OP:          1.0,
-  SCORE_PAR:         0.50,
-  SCORE_BLOCKED:     0.00,
-  SCORE_UNK_BASE:    0.30,
-  W_READ:            0.40,
-  W_CAP:             0.30,
-  W_PROX:            0.20,
-  W_VULN:            0.10,
-  SUCCESS_MIN_READ:  0.40,
-  MAX_PERTURB:       0.85,
+  MC_RUNS: 500,              // Monte Carlo iterations per (group, destination) pair
+  UNC_CURVE_STEPS: 10,       // Points on uncertainty curve: 0%, 10%, … 100%
+
+  GATEKEEPER_WEIGHT: 2,      // Gatekeepers count double
+  NORMAL_WEIGHT: 1,
+  GK_BLOCKED_CAP: 0.20,      // Hard readiness cap when any gatekeeper is blocked
+
+  SCORE_OP: 1.0,
+  SCORE_PART: 0.5,
+  SCORE_BLOCKED: 0.0,
+  SCORE_UNKNOWN_BASE: 0.30,
+
+  W_READINESS: 0.40,
+  W_CAPACITY: 0.30,
+  W_PROXIMITY: 0.20,
+  W_VULN: 0.10,
+
+  SUCCESS_MIN_READINESS: 0.40,
+
   CAP_MIN: 200, CAP_MAX: 5000,
   DIST_MIN: 20, DIST_MAX: 400,
   SIZE_MIN: 50, SIZE_MAX: 2000,
+
+  MAX_PERTURB_PROB: 0.85,
+};
+
+const PARAM_DOCS = {
+  MC_RUNS:               'Monte Carlo iterations per (group, destination) pair',
+  UNC_CURVE_STEPS:       'Data points on the uncertainty sensitivity curve',
+  GATEKEEPER_WEIGHT:     'Weight multiplier for gatekeeper factors (Security, Authority)',
+  NORMAL_WEIGHT:         'Weight for standard (non-gatekeeper) factors',
+  GK_BLOCKED_CAP:        'Hard readiness ceiling when any gatekeeper is blocked',
+  SCORE_OP:              'Factor score for Operational status (before confidence scaling)',
+  SCORE_PART:            'Factor score for Partial status (before confidence scaling)',
+  SCORE_BLOCKED:         'Factor score for Blocked status',
+  SCORE_UNKNOWN_BASE:    'Base score for Unknown status (epistemic conservatism)',
+  W_READINESS:           'Composite score weight — destination readiness quality',
+  W_CAPACITY:            'Composite score weight — capacity fit (capped at 1.0)',
+  W_PROXIMITY:           'Composite score weight — proximity to origin zone',
+  W_VULN:                'Composite score weight — vulnerability / needs match',
+  SUCCESS_MIN_READINESS: 'Minimum readiness for a MC run to count as success',
+  CAP_MIN:               'Minimum generated destination capacity (beds)',
+  CAP_MAX:               'Maximum generated destination capacity (beds)',
+  DIST_MIN:              'Minimum generated distance to destination (km)',
+  DIST_MAX:              'Maximum generated distance to destination (km)',
+  SIZE_MIN:              'Minimum generated evacuee group size (persons)',
+  SIZE_MAX:              'Maximum generated evacuee group size (persons)',
+  MAX_PERTURB_PROB:      'Max probability of status shift per factor at 100% uncertainty',
 };
 
 const FACTORS = [
-  { id:'security',    label:'Security',         short:'SEC',  gk:true  },
-  { id:'authority',   label:'Authority consent', short:'AUTH', gk:true  },
-  { id:'willingness', label:'Willingness',       short:'WILL', gk:false },
-  { id:'capacity',    label:'Capacity',          short:'CAP',  gk:false },
-  { id:'shelter',     label:'Shelter',           short:'SHLT', gk:false },
-  { id:'food_water',  label:'Food & water',      short:'F&W',  gk:false },
-  { id:'medical',     label:'Medical capacity',  short:'MED',  gk:false },
+  { id: 'security',    label: 'Security',          short: 'SEC',  gk: true  },
+  { id: 'authority',   label: 'Authority consent',  short: 'AUTH', gk: true  },
+  { id: 'willingness', label: 'Willingness',        short: 'WILL', gk: true, blockedLabel: 'Unwilling' },
+  { id: 'capacity',    label: 'Capacity',           short: 'CAP',  gk: false },
+  { id: 'shelter',     label: 'Shelter',            short: 'SHLT', gk: false },
+  { id: 'food_water',  label: 'Food & water',       short: 'F&W',  gk: false },
+  { id: 'medical',     label: 'Medical capacity',   short: 'MED',  gk: false },
 ];
-const STATUSES = ['operational','partial','blocked','unknown'];
+const STATUSES = ['operational', 'partial', 'blocked', 'unknown'];
+
+// A gatekeeper factor's "blocked" status is displayed with a factor-specific
+// label where the generic word "Blocked" would be misleading — e.g. a host
+// community that has explicitly declined is "Unwilling", not physically
+// blocked. This is distinct from "Unknown" (willingness has not been assessed
+// at all): one is a confirmed exclusion, the other is an intelligence gap.
+function statusLabel(f, status) {
+  if (status === 'blocked' && f.blockedLabel) return f.blockedLabel;
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+function blockedGkFactors(dest) {
+  return FACTORS.filter(f => f.gk && dest.factors[f.id].status === 'blocked');
+}
 
 const ARCHETYPES = [
-  { name:'Elderly & mobility-impaired', vuln:5, needs:'mobility', urgency:'immediate' },
-  { name:'Families with children',      vuln:4, needs:null,       urgency:'urgent'    },
-  { name:'Unaccompanied adults',        vuln:2, needs:null,       urgency:'can-wait'  },
-  { name:'Wounded & medical cases',     vuln:5, needs:'medical',  urgency:'immediate' },
-  { name:'Unaccompanied minors',        vuln:5, needs:'medical',  urgency:'immediate' },
-  { name:'Pregnant women',             vuln:4, needs:'medical',  urgency:'urgent'    },
-  { name:'Mixed general population',   vuln:2, needs:null,       urgency:'can-wait'  },
-  { name:'Journalists & aid workers',  vuln:2, needs:null,       urgency:'urgent'    },
+  { name: 'Elderly & mobility-impaired', vuln: 5, needs: 'mobility', urgency: 'immediate' },
+  { name: 'Families with children',      vuln: 4, needs: null,       urgency: 'urgent'    },
+  { name: 'Unaccompanied adults',        vuln: 2, needs: null,       urgency: 'can-wait'  },
+  { name: 'Wounded & medical cases',     vuln: 5, needs: 'medical',  urgency: 'immediate' },
+  { name: 'Unaccompanied minors',        vuln: 5, needs: 'medical',  urgency: 'immediate' },
+  { name: 'Pregnant women',             vuln: 4, needs: 'medical',  urgency: 'urgent'    },
+  { name: 'Mixed general population',   vuln: 2, needs: null,       urgency: 'can-wait'  },
+  { name: 'Journalists & aid workers',  vuln: 2, needs: null,       urgency: 'urgent'    },
 ];
-const PREFIXES = ['Camp','Settlement','Hub','Centre','Station','Zone','Site','Compound'];
-const NATO     = ['Alpha','Bravo','Charlie','Delta','Echo','Foxtrot','Golf','Hotel',
-                  'India','Juliet','Kilo','Lima','Mike','November','Oscar','Papa'];
 
-// ── Park-Miller LCG  (Park & Miller 1988, CACM 31(10))
+const DEST_PREFIXES = ['Camp','Settlement','Hub','Centre','Station','Zone','Site','Compound'];
+const DEST_NAMES    = ['Alpha','Bravo','Charlie','Delta','Echo','Foxtrot','Golf','Hotel',
+                       'India','Juliet','Kilo','Lima','Mike','November','Oscar','Papa'];
+
+// ============================================================
+// SEEDED RNG — Park-Miller LCG (unchanged)
+// ============================================================
 class RNG {
-  constructor(seed) { this.s = Math.max(1, Math.abs(Math.floor(seed)) % 2147483646) || 1 }
-  next() { this.s = (this.s * 16807) % 2147483647; return (this.s-1)/2147483646 }
-  int(a,b) { return Math.floor(this.next()*(b-a+1))+a }
-  pick(arr) { return arr[this.int(0,arr.length-1)] }
-  expo(lo,hi) {
-    const lam=3, t=-Math.log(1-this.next()*(1-Math.exp(-lam)))/lam;
-    return Math.round(lo+t*(hi-lo));
+  constructor(seed) {
+    this.s = Math.max(1, Math.abs(Math.floor(seed)) % 2147483646) || 1;
+  }
+  next() {
+    this.s = (this.s * 16807) % 2147483647;
+    return (this.s - 1) / 2147483646;
+  }
+  int(lo, hi)   { return Math.floor(this.next() * (hi - lo + 1)) + lo; }
+  pick(arr)     { return arr[this.int(0, arr.length - 1)]; }
+  expo(lo, hi)  {
+    const lam = 3.0;
+    const t = -Math.log(1 - this.next() * (1 - Math.exp(-lam))) / lam;
+    return Math.round(lo + t * (hi - lo));
   }
 }
 
-// ── Data generation
-function genDests(rng, n) {
-  return Array.from({length:n}, (_,i) => {
+// ============================================================
+// DATA GENERATION (unchanged)
+// ============================================================
+function generateDestinations(rng, n) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
     const factors = {};
     FACTORS.forEach(f => {
-      const w = f.gk ? [.30,.28,.24,.18] : [.40,.28,.10,.22];
-      let r=rng.next(), cum=0, st='unknown';
-      for(let s=0;s<STATUSES.length;s++){cum+=w[s];if(r<cum){st=STATUSES[s];break}}
-      const bc = st==='unknown' ? rng.next()*.45+.05 :
-                 st==='blocked' ? rng.next()*.35+.40 : rng.next()*.35+.60;
-      factors[f.id] = {status:st, bc};
+      const w = f.gk
+        ? [0.30, 0.28, 0.24, 0.18]
+        : [0.40, 0.28, 0.10, 0.22];
+      const r = rng.next();
+      let cum = 0, chosen = 'unknown';
+      for (let s = 0; s < STATUSES.length; s++) { cum += w[s]; if (r < cum) { chosen = STATUSES[s]; break; } }
+      const baseConf = chosen === 'unknown'  ? rng.next() * 0.45 + 0.05 :
+                       chosen === 'blocked'  ? rng.next() * 0.35 + 0.40 :
+                                              rng.next() * 0.35 + 0.60;
+      factors[f.id] = { status: chosen, baseConf };
     });
-    return {
-      id:`d${i}`,
-      name:`${PREFIXES[rng.int(0,PREFIXES.length-1)]} ${NATO[i<NATO.length?i:rng.int(0,NATO.length-1)]}`,
+    out.push({
+      id: `d${i}`,
+      name: `${DEST_PREFIXES[rng.int(0, DEST_PREFIXES.length-1)]} ${DEST_NAMES[i < DEST_NAMES.length ? i : rng.int(0, DEST_NAMES.length-1)]}`,
       factors,
       capacity: rng.expo(PARAMS.CAP_MIN, PARAMS.CAP_MAX),
       distance: rng.int(PARAMS.DIST_MIN, PARAMS.DIST_MAX),
-    };
-  });
+    });
+  }
+  return out;
 }
 
-function genGroups(rng, m) {
+function generateGroups(rng, m) {
   const pool = [...ARCHETYPES];
-  for(let i=pool.length-1;i>0;i--){const j=rng.int(0,i);[pool[i],pool[j]]=[pool[j],pool[i]]}
-  return pool.slice(0, Math.min(m, pool.length)).map((a,i)=>({
-    id:`g${i}`, name:a.name, size:rng.int(PARAMS.SIZE_MIN,PARAMS.SIZE_MAX),
-    vuln:a.vuln, needs:a.needs, urgency:a.urgency,
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = rng.int(0, i);
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(m, pool.length)).map((a, i) => ({
+    id: `g${i}`,
+    name: a.name,
+    size: rng.int(PARAMS.SIZE_MIN, PARAMS.SIZE_MAX),
+    vuln: a.vuln,
+    needs: a.needs,
+    urgency: a.urgency,
   }));
 }
 
-// ── Readiness scoring
-function readiness(dest, cm, ov) {
-  let wSum=0, wTot=0, gkBlocked=false;
-  const fs = {};
+// ============================================================
+// READINESS SCORING (unchanged)
+// ============================================================
+function computeReadiness(dest, confMult, overrides) {
+  let wSum = 0, wTot = 0, gkBlocked = false;
+  const fScores = {};
   FACTORS.forEach(f => {
-    const st = (ov && ov[f.id]) || dest.factors[f.id].status;
-    const ec = dest.factors[f.id].bc * cm;  // effective confidence
-    const w  = f.gk ? PARAMS.GK_WEIGHT : PARAMS.NORM_WEIGHT;
+    const status = (overrides && overrides[f.id]) || dest.factors[f.id].status;
+    const effConf = dest.factors[f.id].baseConf * confMult;
+    const w = f.gk ? PARAMS.GATEKEEPER_WEIGHT : PARAMS.NORMAL_WEIGHT;
     let score;
-    if(st==='blocked')      { if(f.gk) gkBlocked=true; score=0; }
-    else if(st==='unknown') { score = PARAMS.SCORE_UNK_BASE*(0.5+0.5*ec); }
-    else                    { score = (st==='operational'?PARAMS.SCORE_OP:PARAMS.SCORE_PAR)*(0.5+0.5*ec); }
-    fs[f.id]=score; wSum+=w*score; wTot+=w;
+    if (status === 'blocked') {
+      if (f.gk) gkBlocked = true;
+      score = PARAMS.SCORE_BLOCKED;
+    } else if (status === 'unknown') {
+      score = PARAMS.SCORE_UNKNOWN_BASE * (0.5 + 0.5 * effConf);
+    } else {
+      const base = status === 'operational' ? PARAMS.SCORE_OP : PARAMS.SCORE_PART;
+      score = base * (0.5 + 0.5 * effConf);
+    }
+    fScores[f.id] = score;
+    wSum += w * score;
+    wTot += w;
   });
-  let r = wTot>0 ? wSum/wTot : 0;
-  if(gkBlocked) r = Math.min(r, PARAMS.GK_CAP);
-  return {r, gkBlocked, fs};
+  let readiness = wTot > 0 ? wSum / wTot : 0;
+  if (gkBlocked) readiness = Math.min(readiness, PARAMS.GK_BLOCKED_CAP);
+  return { readiness, gkBlocked, fScores };
 }
 
-// ── Monte Carlo
-function perturbSt(st, ec, rng) {
-  if(st==='unknown') return st;
-  if(rng.next() > PARAMS.MAX_PERTURB*(1-ec)) return st;
-  const i = STATUSES.indexOf(st);
-  return STATUSES[Math.max(0, Math.min(STATUSES.length-1, i+(rng.next()<.5?-1:1)))];
+// ============================================================
+// MONTE CARLO ENGINE (unchanged logic; added optional runs param)
+// ============================================================
+function perturbStatus(status, effConf, rng) {
+  if (status === 'unknown') return status;
+  const prob = PARAMS.MAX_PERTURB_PROB * (1 - effConf);
+  if (rng.next() > prob) return status;
+  const idx = STATUSES.indexOf(status);
+  const dir = rng.next() < 0.5 ? -1 : 1;
+  return STATUSES[Math.max(0, Math.min(STATUSES.length - 1, idx + dir))];
 }
-function mc(dest, group, cm, seed) {
+
+function monteCarlo(dest, group, confMult, seed, runs) {
+  runs = (runs !== undefined) ? runs : PARAMS.MC_RUNS;
   const rng = new RNG(seed);
-  let ok=0; const rv=[];
-  for(let run=0; run<PARAMS.MC_RUNS; run++) {
-    const ov={};
-    FACTORS.forEach(f=>{ ov[f.id]=perturbSt(dest.factors[f.id].status, dest.factors[f.id].bc*cm, rng); });
-    const {r, gkBlocked}=readiness(dest,cm,ov);
-    rv.push(r);
-    if(r>=PARAMS.SUCCESS_MIN_READ && dest.capacity>=group.size && !gkBlocked) ok++;
+  let successes = 0;
+  const readinessVals = [];
+  for (let run = 0; run < runs; run++) {
+    const ov = {};
+    FACTORS.forEach(f => {
+      const effConf = dest.factors[f.id].baseConf * confMult;
+      ov[f.id] = perturbStatus(dest.factors[f.id].status, effConf, rng);
+    });
+    const { readiness, gkBlocked } = computeReadiness(dest, confMult, ov);
+    readinessVals.push(readiness);
+    if (readiness >= PARAMS.SUCCESS_MIN_READINESS && dest.capacity >= group.size && !gkBlocked) successes++;
   }
-  const mean=rv.reduce((a,b)=>a+b,0)/PARAMS.MC_RUNS;
-  const sd=Math.sqrt(rv.reduce((a,b)=>a+(b-mean)**2,0)/PARAMS.MC_RUNS);
-  return {sr:ok/PARAMS.MC_RUNS, mean, sd};
+  const mean = readinessVals.reduce((a,b) => a+b, 0) / runs;
+  const variance = readinessVals.reduce((a,b) => a + (b-mean)**2, 0) / runs;
+  return { successRate: successes / runs, mean, stdDev: Math.sqrt(variance) };
 }
 
-// ── Assignment
-function composite(dest, group, cm) {
-  const {r}=readiness(dest,cm);
-  const capFit = Math.min(1, dest.capacity/group.size);
-  const prox   = 1-(dest.distance/PARAMS.DIST_MAX);
-  const vm     = (group.needs && dest.factors.medical.status==='operational') ? 1.0 : 0.5;
-  return {comp:r*PARAMS.W_READ+capFit*PARAMS.W_CAP+prox*PARAMS.W_PROX+vm*PARAMS.W_VULN, r, capFit, prox, vm};
+// ============================================================
+// ASSIGNMENT ALGORITHM
+// Groups sorted by urgency; greedy sequential with capacity tracking.
+// ============================================================
+function compositeScore(dest, group, confMult) {
+  const { readiness } = computeReadiness(dest, confMult);
+  const capFit   = Math.min(1, dest.capacity / group.size);
+  const prox     = 1 - (dest.distance / PARAMS.DIST_MAX);
+  const vulnMatch = (group.needs && dest.factors.medical.status === 'operational') ? 1.0 : 0.5;
+  const comp = readiness * PARAMS.W_READINESS
+             + capFit   * PARAMS.W_CAPACITY
+             + prox     * PARAMS.W_PROXIMITY
+             + vulnMatch* PARAMS.W_VULN;
+  return { comp, readiness, capFit, prox, vulnMatch };
 }
-function assign(dests, groups, cm) {
-  return groups.map((group,gi)=>{
-    const ranked = dests.map((dest,di)=>{
-      const {comp,r,capFit,prox,vm}=composite(dest,group,cm);
-      const m=mc(dest,group,cm,gi*1000+di+1);
-      return {destId:dest.id,comp,r,capFit,prox,vm,mc:m};
-    }).sort((a,b)=>b.comp-a.comp);
-    const primary=ranked[0], alt=ranked[1]||null;
-    const pd=dests.find(d=>d.id===primary.destId);
-    const {fs}=readiness(pd,cm);
-    const risk=FACTORS.reduce((w,f)=>fs[f.id]<fs[w.id]?f:w,FACTORS[0]);
-    return {group,ranked,primary,alt,risk,pd};
+
+function assign(destinations, groups, confMult) {
+  const urgencyOrder = { 'immediate': 0, 'urgent': 1, 'can-wait': 2 };
+  // Process in urgency order; MC seed uses urgency-sorted index for determinism
+  const sortedGroups = [...groups].sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
+  const remaining = {};
+  destinations.forEach(d => { remaining[d.id] = d.capacity; });
+
+  return sortedGroups.map((group, si) => {
+    const ranked = destinations.map((dest, di) => {
+      const { comp, readiness, capFit, prox, vulnMatch } = compositeScore(dest, group, confMult);
+      const mc = monteCarlo(dest, group, confMult, si * 1000 + di + 1);
+      return { destId: dest.id, comp, readiness, capFit, prox, vulnMatch, mc };
+    }).sort((a, b) => b.comp - a.comp);
+
+    const viableRanked = ranked.filter(r => remaining[r.destId] >= group.size);
+    let primary, unassigned;
+    if (viableRanked.length > 0) {
+      primary = viableRanked[0];
+      remaining[primary.destId] -= group.size;
+      unassigned = false;
+    } else {
+      primary = ranked[0]; // best score, but flagged unassignable
+      unassigned = true;
+    }
+
+    const alt = viableRanked.length > 1 ? viableRanked[1] : null;
+    const primDest = destinations.find(d => d.id === primary.destId);
+    const { fScores } = computeReadiness(primDest, confMult);
+    const riskFactor = FACTORS.reduce((w, f) => fScores[f.id] < fScores[w.id] ? f : w, FACTORS[0]);
+
+    return { group, ranked, primary, alt, riskFactor, primDest, unassigned };
   });
 }
 
-// ── Uncertainty curves (pre-computed per scenario)
-function buildCurves(dests, groups) {
-  return groups.map((g,gi)=>
-    Array.from({length:PARAMS.UNC_STEPS+1},(_,i)=>{
-      const unc=i/PARAMS.UNC_STEPS, cm=1-unc;
-      let bd=dests[0], bs=-Infinity;
-      dests.forEach((d,di)=>{const {comp}=composite(d,g,cm);if(comp>bs){bs=comp;bd=d;}});
-      const m=mc(bd,g,cm,gi*10000+i+50000);
-      return {unc, sr:m.sr};
-    })
-  );
+// ============================================================
+// INFORMATION VALUE ENGINE
+// Lightweight assign (100 MC runs) used for factor-upgrade simulation.
+// Seed namespace offset avoids collision with main simulation seeds.
+// ============================================================
+function assignForInfoValue(destinations, groups, confMult, runs, seedOffset) {
+  const urgencyOrder = { 'immediate': 0, 'urgent': 1, 'can-wait': 2 };
+  const sorted = [...groups].sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
+  const remaining = {};
+  destinations.forEach(d => { remaining[d.id] = d.capacity; });
+
+  return sorted.map((group, si) => {
+    const scores = destinations.map(dest => ({
+      destId: dest.id,
+      dest,
+      comp: compositeScore(dest, group, confMult).comp,
+    })).sort((a, b) => b.comp - a.comp);
+
+    const viable = scores.filter(s => remaining[s.destId] >= group.size);
+    if (viable.length === 0) return { successRate: 0 };
+
+    remaining[viable[0].destId] -= group.size;
+    const mc = monteCarlo(viable[0].dest, group, confMult, seedOffset + si * 997 + 1, runs);
+    return { successRate: mc.successRate };
+  });
 }
 
-// ── Render helpers
-const rCol = r => r>=.70?'var(--op)':r>=.40?'var(--par)':r>=.20?'#e67e22':'var(--blk)';
+function computeInfoValue(destinations, groups, confMult) {
+  const INFO_RUNS = 100;
+  const BASE_SEED = 200001;
 
-function renderDests(dests, cm) {
-  const c = document.getElementById('dest-cards');
-  c.innerHTML = '';
-  dests.forEach(dest=>{
-    const {r,gkBlocked,fs}=readiness(dest,cm);
-    const m0 = ST.groups.length ? mc(dest,ST.groups[0],cm,88888+dest.id.charCodeAt(1)) : null;
-    const el = document.createElement('div');
-    el.className='dcard'+(gkBlocked?' gk-blocked':'');
-    el.innerHTML=`
-      <div class="dcard-top">
-        <div>
-          <div class="dname">${dest.name}</div>
-          ${gkBlocked?'<span class="gk-badge">⊘ Gatekeeper Blocked</span>':''}
+  const baseResults = assignForInfoValue(destinations, groups, confMult, INFO_RUNS, BASE_SEED);
+  const baseMean = baseResults.reduce((s, r) => s + r.successRate, 0) / Math.max(1, baseResults.length);
+
+  return FACTORS.map((f, fi) => {
+    const unknownDests = destinations.filter(d => d.factors[f.id].status === 'unknown');
+    if (unknownDests.length === 0) {
+      return { factor: f, delta: 0, baseMean, newMean: baseMean, unknownCount: 0 };
+    }
+    // Upgrade all unknown instances of this factor to operational
+    const modDests = destinations.map(d => {
+      if (d.factors[f.id].status !== 'unknown') return d;
+      return { ...d, factors: { ...d.factors, [f.id]: { ...d.factors[f.id], status: 'operational' } } };
+    });
+    const modResults = assignForInfoValue(modDests, groups, confMult, INFO_RUNS, BASE_SEED + (fi + 1) * 30000);
+    const newMean = modResults.reduce((s, r) => s + r.successRate, 0) / Math.max(1, modResults.length);
+
+    return { factor: f, delta: newMean - baseMean, baseMean, newMean, unknownCount: unknownDests.length };
+  }).sort((a, b) => b.delta - a.delta);
+}
+
+// ============================================================
+// UNCERTAINTY CURVES (unchanged)
+// ============================================================
+function buildCurves(destinations, groups) {
+  return groups.map((group, gi) => {
+    const pts = [];
+    for (let lvl = 0; lvl <= PARAMS.UNC_CURVE_STEPS; lvl++) {
+      const unc = lvl / PARAMS.UNC_CURVE_STEPS;
+      const cm  = 1 - unc;
+      let bestDest = destinations[0], bestComp = -Infinity;
+      destinations.forEach((d, di) => {
+        const { comp } = compositeScore(d, group, cm);
+        if (comp > bestComp) { bestComp = comp; bestDest = d; }
+      });
+      const mc = monteCarlo(bestDest, group, cm, gi * 10000 + lvl + 50000);
+      pts.push({ unc, sr: mc.successRate });
+    }
+    return pts;
+  });
+}
+
+// ============================================================
+// URL STATE
+// ============================================================
+function updateURL() {
+  const params = new URLSearchParams();
+  params.set('seed', document.getElementById('seed-input').value);
+  params.set('n', document.getElementById('n-dest').value);
+  params.set('m', document.getElementById('n-groups').value);
+  params.set('u', Math.round(state.uncertaintyLevel * 100));
+  history.replaceState(null, '', '?' + params.toString());
+}
+
+function loadFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('seed')) document.getElementById('seed-input').value = params.get('seed');
+  if (params.has('n'))    document.getElementById('n-dest').value    = params.get('n');
+  if (params.has('m'))    document.getElementById('n-groups').value  = params.get('m');
+  if (params.has('u')) {
+    const u = Math.max(0, Math.min(100, parseInt(params.get('u')) || 30));
+    state.uncertaintyLevel = u / 100;
+    document.getElementById('uncertainty-slider').value = u;
+    document.getElementById('uncertainty-value').textContent = `${u}%`;
+  }
+}
+
+function copyLink() {
+  updateURL();
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const btn = document.getElementById('btn-copy');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }).catch(() => {
+    prompt('Copy this URL:', window.location.href);
+  });
+}
+
+// ============================================================
+// RENDERING HELPERS
+// ============================================================
+function readinessColor(r) {
+  if (r >= 0.70) return 'var(--col-operational)';
+  if (r >= 0.40) return 'var(--col-partial)';
+  if (r >= 0.20) return '#e67e22';
+  return 'var(--col-blocked)';
+}
+
+function renderDestCards(destinations, confMult) {
+  const container = document.getElementById('dest-cards');
+  container.innerHTML = '';
+  destinations.forEach(dest => {
+    const { readiness, gkBlocked } = computeReadiness(dest, confMult);
+    const mc0 = state.groups.length ? monteCarlo(dest, state.groups[0], confMult, 88888 + dest.id.charCodeAt(1)) : null;
+    const blockedGks = blockedGkFactors(dest);
+
+    const card = document.createElement('div');
+    card.className = 'dest-card' + (gkBlocked ? ' gk-blocked' : '');
+    card.id = 'dc-' + dest.id;
+
+    card.innerHTML = `
+      <div class="dest-card-header">
+        <div class="dest-name">${dest.name}</div>
+        <div class="dest-meta">
+          ${dest.distance} km &nbsp;·&nbsp; ${dest.capacity.toLocaleString()} beds
+          ${gkBlocked ? `<br><span style="color:var(--col-blocked);font-weight:700">⊘ ${blockedGks.map(f=>statusLabel(f,'blocked')).join(', ')}</span>` : ''}
         </div>
-        <div class="dmeta">${dest.distance} km away<br>${dest.capacity.toLocaleString()} beds</div>
       </div>
-      <div class="pills">${FACTORS.map(f=>{
-        const fd=dest.factors[f.id];
-        return `<span class="pill ${fd.status}" title="${f.label}: ${fd.status} · base confidence ${(fd.bc*100).toFixed(0)}%">${f.gk?'★ ':''}${f.short}</span>`;
-      }).join('')}</div>
+      <div class="factor-pills">
+        ${FACTORS.map(f => {
+          const fd = dest.factors[f.id];
+          return `<span class="fpill ${fd.status}" title="${f.label}: ${statusLabel(f,fd.status)} (base conf ${(fd.baseConf*100).toFixed(0)}%)">${f.gk ? '★ ' : ''}${f.short}</span>`;
+        }).join('')}
+      </div>
       <div class="rbar-wrap">
-        <div class="rbar-top">
-          <span class="rbar-label">Readiness</span>
-          <span class="rbar-pct" style="color:${rCol(r)}">${(r*100).toFixed(1)}%</span>
+        <div class="rbar-labels">
+          <span>Readiness</span>
+          <span style="color:${readinessColor(readiness)};font-weight:700">${(readiness*100).toFixed(1)}%</span>
         </div>
-        <div class="rbar-bg"><div class="rbar-fill" style="width:${(r*100).toFixed(1)}%;background:${rCol(r)}"></div></div>
+        <div class="rbar-outer"><div class="rbar-inner" style="width:${(readiness*100).toFixed(1)}%;background:${readinessColor(readiness)}"></div></div>
       </div>
-      ${m0?`<div class="dstats">
-        <div class="dstat"><div class="dstat-v">${(m0.sr*100).toFixed(0)}%</div><div class="dstat-l">MC success¹</div></div>
-        <div class="dstat"><div class="dstat-v">±${(m0.sd*100).toFixed(1)}%</div><div class="dstat-l">Std dev</div></div>
-        <div class="dstat"><div class="dstat-v">${(cm*100).toFixed(0)}%</div><div class="dstat-l">Conf level</div></div>
+      ${mc0 ? `<div class="dest-stats-row">
+        <div class="dstat"><span class="dstat-val">${(mc0.successRate*100).toFixed(0)}%</span><span>MC success¹</span></div>
+        <div class="dstat"><span class="dstat-val">±${(mc0.stdDev*100).toFixed(1)}pp</span><span>Std dev</span></div>
+        <div class="dstat"><span class="dstat-val">${(confMult*100).toFixed(0)}%</span><span>Conf mult</span></div>
       </div>
-      <div style="font-size:9px;color:var(--t3);margin-top:5px">¹ vs group 1 — recalculated per assignment in matrix</div>`:``}
+      <div style="font-size:9px;color:var(--col-text-secondary);margin-top:3px">¹ vs group 1; recalculated per-assignment in matrix</div>` : ''}
     `;
-    c.appendChild(el);
+    container.appendChild(card);
   });
 }
 
-function renderMatrix(dests, assignments, cm) {
-  const allC = assignments.flatMap(a=>a.ranked.map(s=>s.comp));
-  const lo=Math.min(...allC), hi=Math.max(...allC);
-  let html=`<table id="mtx"><thead><tr><th class="rl">Group</th>`;
-  dests.forEach(d=>{html+=`<th>${d.name}<br><span style="font-size:9px;font-weight:400;color:var(--t3)">${d.distance}km · ${d.capacity.toLocaleString()}b</span></th>`;});
-  html+=`</tr></thead><tbody>`;
-  assignments.forEach(a=>{
-    html+=`<tr><td class="gl">${a.group.name}<br><span class="gsub">n=${a.group.size.toLocaleString()} · V${a.group.vuln}/5</span></td>`;
-    dests.forEach(dest=>{
-      const s=a.ranked.find(r=>r.destId===dest.id);
-      const t=hi>lo?(s.comp-lo)/(hi-lo):.5;
-      const R=Math.round(230-t*120),G=Math.round(210+t*35),B=Math.round(240-t*180);
-      const win=dest.id===a.primary.destId;
-      html+=`<td class="${win?'winner':''}" style="background:rgb(${R},${G},${B});color:${t>.55?'#1a2332':'#374151'}">
-        ${(s.comp*100).toFixed(1)}<br><span style="font-size:9px;opacity:.7">${(s.mc.sr*100).toFixed(0)}%✓</span>
+function renderMatrix(destinations, assignments, confMult) {
+  const allComp = assignments.flatMap(a => a.ranked.map(s => s.comp));
+  const lo = Math.min(...allComp), hi = Math.max(...allComp);
+
+  let html = '<table id="matrix-table"><thead><tr><th class="row-hdr">Group \\ Destination</th>';
+  destinations.forEach(d => {
+    html += `<th>${d.name}<br><span style="font-size:9px;font-weight:400;color:#94a3b8">${d.distance}km · ${d.capacity.toLocaleString()}b</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  assignments.forEach(a => {
+    const urgencyLabel = a.group.urgency === 'immediate' ? '<span style="color:#991b1b;font-size:9px">⬆ IMM</span>' :
+                         a.group.urgency === 'urgent'    ? '<span style="color:#92400e;font-size:9px">↑ URG</span>' : '';
+    html += `<tr><td class="group-label">${a.group.name} ${urgencyLabel}<br><span style="font-size:9px;color:#94a3b8">n=${a.group.size.toLocaleString()} · V${a.group.vuln}</span></td>`;
+    destinations.forEach(dest => {
+      const s = a.ranked.find(r => r.destId === dest.id);
+      const comp = s ? s.comp : 0;
+      const t = hi > lo ? (comp - lo) / (hi - lo) : 0.5;
+      const r = Math.round(220 - t * 130), g2 = Math.round(200 + t * 30), b = Math.round(235 - t * 175);
+      const isAssigned      = !a.unassigned && dest.id === a.primary.destId;
+      const isBestUnassigned = a.unassigned && dest.id === a.primary.destId;
+      const sdText = s ? `±${(s.mc.stdDev*100).toFixed(0)}pp` : '';
+      html += `<td class="${isAssigned ? 'assigned' : isBestUnassigned ? 'best-unassigned' : ''}" style="background:rgb(${r},${g2},${b});color:${t > 0.5 ? '#1a2332' : '#374151'}">
+        ${(comp*100).toFixed(1)}<br>
+        <span style="font-size:9px;opacity:0.9">${(s.mc.successRate*100).toFixed(0)}%</span><span style="font-size:8px;opacity:0.65"> ${sdText}</span>
       </td>`;
     });
-    html+=`</tr>`;
+    html += '</tr>';
   });
-  html+=`</tbody></table>`;
-  document.getElementById('matrix-body').innerHTML=html;
+  html += '</tbody></table>';
+  document.getElementById('matrix-container').innerHTML = html;
 }
 
-function renderOutcomes(assignments, dests) {
-  let html='';
-  assignments.forEach(a=>{
-    const sr=a.primary.mc.sr;
-    const rl=sr>=.70?'low':sr>=.40?'medium':'high';
-    const altDest=a.alt?dests.find(d=>d.id===a.alt.destId):null;
-    html+=`<div class="ocard">
+function renderOutcomes(assignments, destinations) {
+  // Assignments already arrive sorted by urgency from assign()
+  let html = `<div class="outcome-row outcome-hdr">
+    <div>Group</div><div>Urgency</div><div>Assigned Destination</div><div>Success</div><div>Risk Factor / Alt</div>
+  </div>`;
+
+  assignments.forEach(a => {
+    const urgClass = a.group.urgency.replace('-', '-'); // 'can-wait' is a valid CSS class
+    const urgBadge = `<span class="urgency-badge ${a.group.urgency}">${a.group.urgency}</span>`;
+
+    if (a.unassigned) {
+      html += `<div class="outcome-row" style="background:#fef2f2">
+        <div>
+          <div class="og-name">${a.group.name}</div>
+          <div class="og-meta">${a.group.size.toLocaleString()} people &nbsp;·&nbsp; V${a.group.vuln}/5${a.group.needs ? `<br>Needs: ${a.group.needs}` : ''}</div>
+        </div>
+        <div>${urgBadge}</div>
+        <div style="color:var(--col-blocked);font-weight:600;font-size:11px">⊘ UNASSIGNED<br><span style="font-weight:400;font-size:10px">No viable destination — capacity exhausted at all sites</span></div>
+        <div style="color:var(--col-blocked);font-size:18px;font-weight:700">—</div>
+        <div></div>
+      </div>`;
+      return;
+    }
+
+    const sr = a.primary.mc.successRate;
+    const sd = a.primary.mc.stdDev;
+    const rl = sr >= 0.70 ? 'low' : sr >= 0.40 ? 'medium' : 'high';
+    const srColor = rl === 'high' ? 'var(--col-blocked)' : rl === 'medium' ? 'var(--col-partial)' : 'var(--col-operational)';
+    const altDest = a.alt ? destinations.find(d => d.id === a.alt.destId) : null;
+
+    html += `<div class="outcome-row">
       <div>
         <div class="og-name">${a.group.name}</div>
-        <div class="og-meta">${a.group.size.toLocaleString()} people &nbsp;·&nbsp; urgency: <strong>${a.group.urgency}</strong>${a.group.needs?`<br>Special needs: ${a.group.needs}`:''}
-        <br>Vulnerability: ${'●'.repeat(a.group.vuln)}${'○'.repeat(5-a.group.vuln)}</div>
+        <div class="og-meta">${a.group.size.toLocaleString()} people &nbsp;·&nbsp; urgency: ${a.group.urgency}${a.group.needs ? `<br>Needs: ${a.group.needs}` : ''}</div>
       </div>
+      <div>${urgBadge}</div>
       <div>
-        <div class="odest">→ ${a.pd?a.pd.name:'—'}</div>
-        <div class="odest-sub">
+        <div style="font-weight:600;font-size:12px">→ ${a.primDest ? a.primDest.name : '—'}</div>
+        <div style="font-size:10px;color:var(--col-text-secondary)">
           composite: ${(a.primary.comp*100).toFixed(1)}%<br>
-          readiness: ${(a.primary.r*100).toFixed(1)}% &nbsp; cap fit: ${(a.primary.capFit*100).toFixed(0)}%<br>
-          proximity: ${(a.primary.prox*100).toFixed(0)}%
+          readiness: ${(a.primary.readiness*100).toFixed(1)}%<br>
+          cap fit: ${(a.primary.capFit*100).toFixed(0)}% &nbsp;prox: ${(a.primary.prox*100).toFixed(0)}%
         </div>
       </div>
-      <div style="text-align:center">
-        <div class="sr-big" style="color:${rl==='high'?'var(--blk)':rl==='medium'?'var(--par)':'var(--op)'}">${(sr*100).toFixed(0)}%</div>
-        <div class="sr-sd">±${(a.primary.mc.sd*100).toFixed(1)}% SD<br>${PARAMS.MC_RUNS} MC runs</div>
+      <div>
+        <div class="srate" style="color:${srColor}">${(sr*100).toFixed(0)}%</div>
+        <div style="font-size:10px;color:var(--col-text-secondary)">±${(sd*100).toFixed(1)}pp SD<br>${PARAMS.MC_RUNS} MC runs</div>
       </div>
       <div>
-        <span class="rbadge ${rl}">⚠ ${a.risk.label}</span>
-        ${altDest?`<div class="alt-note">Alt: <strong>${altDest.name}</strong><br>${(a.alt.mc.sr*100).toFixed(0)}% success rate</div>`:''}
+        <span class="risk-badge ${rl}">⚠ ${a.riskFactor.label}</span>
+        ${altDest ? `<div style="font-size:10px;margin-top:5px;color:var(--col-text-secondary)">Alt: ${altDest.name}<br>${(a.alt.mc.successRate*100).toFixed(0)}% success</div>` : ''}
       </div>
     </div>`;
   });
-  document.getElementById('outcome-body').innerHTML=html;
+  document.getElementById('outcome-container').innerHTML = html;
+}
+
+function renderAlerts(assignments, destinations, confMult) {
+  const alerts = [];
+
+  assignments.forEach(a => {
+    if (a.unassigned) {
+      alerts.push({ level: 'critical', msg: `⚠ <strong>${a.group.name}</strong> (${a.group.size.toLocaleString()} people, urgency: ${a.group.urgency}) is UNASSIGNED — capacity exhausted at all sites` });
+      return;
+    }
+    const sr = a.primary.mc.successRate;
+    const sd = a.primary.mc.stdDev;
+    const destName = a.primDest ? a.primDest.name : '?';
+
+    if (sr < 0.25) {
+      alerts.push({ level: 'critical', msg: `⚠ Critical: <strong>${a.group.name}</strong> assigned to <strong>${destName}</strong> with only <strong>${(sr*100).toFixed(0)}%</strong> success probability` });
+    }
+    const { gkBlocked } = computeReadiness(a.primDest, confMult);
+    if (gkBlocked) {
+      const labels = blockedGkFactors(a.primDest).map(f => statusLabel(f,'blocked')).join(', ');
+      alerts.push({ level: 'critical', msg: `⚠ Gatekeeper risk: <strong>${destName}</strong> is excluded on <strong>${labels}</strong> — assignment of <strong>${a.group.name}</strong> may be invalid` });
+    }
+    if (sd > 0.20) {
+      alerts.push({ level: 'warning', msg: `⚠ Volatile: <strong>${destName}</strong> outcome is highly sensitive to field conditions (SD = ${(sd*100).toFixed(0)}pp) — verify before committing` });
+    }
+  });
+
+  const container = document.getElementById('alerts-container');
+  if (alerts.length === 0) {
+    container.innerHTML = '<div style="background:#d1fae5;border:1px solid #6ee7b7;border-left:4px solid #059669;border-radius:6px;padding:10px 14px;color:#065f46;font-size:12px;font-weight:500">✅ No critical flags in this scenario</div>';
+  } else {
+    container.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px">' +
+      alerts.map(al => {
+        const bg    = al.level === 'critical' ? '#fee2e2' : '#fef3c7';
+        const bdr   = al.level === 'critical' ? '#fca5a5' : '#fde68a';
+        const accent= al.level === 'critical' ? 'var(--col-blocked)' : 'var(--col-partial)';
+        const col   = al.level === 'critical' ? '#991b1b' : '#92400e';
+        return `<div style="background:${bg};border:1px solid ${bdr};border-left:4px solid ${accent};border-radius:var(--radius);padding:9px 13px;font-size:12px;line-height:1.6;color:${col}">${al.msg}</div>`;
+      }).join('') + '</div>';
+  }
+}
+
+function renderInfoValue(infoValues) {
+  const container = document.getElementById('info-value-container');
+  const hasUnknowns = infoValues.some(iv => iv.unknownCount > 0);
+  if (!hasUnknowns) {
+    container.innerHTML = '<p style="color:var(--col-text-secondary);font-size:12px;padding:4px 0">All factors are assessed at every destination — no unknown factors in this scenario.</p>';
+    return;
+  }
+
+  const maxDelta = Math.max(...infoValues.map(iv => iv.delta), 0.001);
+  const top = infoValues.find(iv => iv.unknownCount > 0 && iv.delta > 0);
+  let html = '';
+
+  if (top) {
+    html += `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid var(--col-accent);border-radius:var(--radius);padding:9px 13px;font-size:12px;color:#1e40af;margin-bottom:12px;line-height:1.6">
+      🎯 <strong>Highest impact:</strong> resolving <strong>${top.factor.label}</strong>${top.factor.gk ? ' (gatekeeper ★)' : ''} uncertainty would improve mean success rate by <strong>+${(top.delta*100).toFixed(1)}pp</strong> across ${top.unknownCount} destination${top.unknownCount>1?'s':''}
+    </div>`;
+  }
+
+  html += infoValues.map(iv => {
+    const barPct   = Math.max(0, iv.delta) / maxDelta * 100;
+    const barColor = iv.factor.gk ? '#7c3aed' : 'var(--col-accent)';
+    const deltaText = iv.unknownCount > 0
+      ? (iv.delta > 0.001 ? `+${(iv.delta*100).toFixed(1)}pp` : iv.delta < -0.001 ? `${(iv.delta*100).toFixed(1)}pp` : '~0pp')
+      : '—';
+    return `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <span style="font-size:11px;font-weight:600;color:var(--col-text-primary)">${iv.factor.gk ? '★ ' : ''}${iv.factor.label}</span>
+        <span style="font-size:11px;font-family:var(--font-mono);color:${iv.delta > 0.001 ? barColor : 'var(--col-text-secondary)'}">${deltaText}</span>
+      </div>
+      <div style="height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden">
+        <div style="width:${barPct.toFixed(1)}%;height:100%;background:${barColor};border-radius:3px;transition:width 0.25s ease"></div>
+      </div>
+      <div style="font-size:10px;color:var(--col-text-secondary);margin-top:2px">${iv.unknownCount > 0 ? `${iv.unknownCount} unknown instance${iv.unknownCount>1?'s':''}` : 'No unknown instances'}</div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = html;
 }
 
 function renderChart(groups, curves) {
-  const svg=document.getElementById('unc-chart');
-  const W=svg.parentElement.clientWidth||580, H=200;
-  const M={t:16,r:110,b:36,l:44};
-  const pw=W-M.l-M.r, ph=H-M.t-M.b;
-  const ns='http://www.w3.org/2000/svg';
-  const mk=(t,a)=>{const el=document.createElementNS(ns,t);Object.entries(a).forEach(([k,v])=>el.setAttribute(k,v));return el;};
-  const tx=(x,y,s,a)=>{const el=mk('text',{x,y,...a});el.textContent=s;return el;};
-  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
-  svg.setAttribute('height',H);
-  svg.innerHTML='';
-  const g=mk('g',{transform:`translate(${M.l},${M.t})`});
+  const svg = document.getElementById('unc-chart');
+  const W = svg.parentElement.clientWidth || 600;
+  const H = 200;
+  const M = { t: 18, r: 120, b: 36, l: 46 };
+  const pw = W - M.l - M.r, ph = H - M.t - M.b;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const mk = (tag, attrs) => {
+    const el = document.createElementNS(ns, tag);
+    Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k, v));
+    return el;
+  };
+  const txt = (x, y, str, attrs) => {
+    const el = mk('text', { x, y, ...attrs });
+    el.textContent = str;
+    return el;
+  };
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('height', H);
+  svg.innerHTML = '';
+
+  const g = mk('g', { transform: `translate(${M.l},${M.t})` });
   svg.appendChild(g);
 
-  // Grid
-  for(let i=0;i<=5;i++){
-    const y=ph-(i/5)*ph;
-    g.appendChild(mk('line',{x1:0,x2:pw,y1:y,y2:y,stroke:'#e9ecef','stroke-width':1}));
-    g.appendChild(tx(-5,y+4,`${i*20}%`,{'text-anchor':'end','font-size':9,fill:'#94a3b8'}));
+  for (let i = 0; i <= 5; i++) {
+    const y = ph - (i/5)*ph;
+    g.appendChild(mk('line', { x1:0, x2:pw, y1:y, y2:y, stroke:'#e5e7eb', 'stroke-width':1 }));
+    g.appendChild(txt(-5, y+4, `${i*20}%`, { 'text-anchor':'end', 'font-size':9, fill:'#94a3b8' }));
   }
 
-  // 40% threshold
-  const ty=ph-0.4*ph;
-  g.appendChild(mk('line',{x1:0,x2:pw,y1:ty,y2:ty,stroke:'#fca5a5','stroke-width':1.5,'stroke-dasharray':'5,3'}));
-  g.appendChild(tx(pw+4,ty+4,'40% min',{'font-size':9,fill:'#ef4444'}));
+  const ty = ph - 0.4*ph;
+  g.appendChild(mk('line', { x1:0, x2:pw, y1:ty, y2:ty, stroke:'var(--col-blocked)', 'stroke-width':1, 'stroke-dasharray':'4,3' }));
+  g.appendChild(txt(pw+4, ty+4, '40% min', { 'font-size':9, fill:'var(--col-blocked)' }));
 
-  // Current uncertainty line
-  const cx=ST.uncertaintyLevel*pw;
-  g.appendChild(mk('line',{x1:cx,x2:cx,y1:0,y2:ph,stroke:'#818cf8','stroke-width':1.5,'stroke-dasharray':'3,2'}));
+  const cx = state.uncertaintyLevel * pw;
+  g.appendChild(mk('line', { x1:cx, x2:cx, y1:0, y2:ph, stroke:'#6366f1', 'stroke-width':1.5, 'stroke-dasharray':'3,2' }));
 
-  const COLS=['#2563eb','#059669','#d97706','#7c3aed','#dc2626','#0891b2','#65a30d','#c026d3'];
-  curves.forEach((pts,gi)=>{
-    const col=COLS[gi%COLS.length];
-    const path=pts.map((p,i)=>`${i===0?'M':'L'}${(p.unc*pw).toFixed(1)},${(ph-p.sr*ph).toFixed(1)}`).join(' ');
-    g.appendChild(mk('path',{d:path,stroke:col,'stroke-width':2,fill:'none','stroke-linejoin':'round'}));
-    const ip=Math.min(Math.round(ST.uncertaintyLevel*PARAMS.UNC_STEPS),pts.length-1);
-    const cp=pts[ip];
-    g.appendChild(mk('circle',{cx:(cp.unc*pw).toFixed(1),cy:(ph-cp.sr*ph).toFixed(1),r:5,fill:col,stroke:'white','stroke-width':2}));
-    const ly=gi*15+6;
-    g.appendChild(mk('line',{x1:pw+8,x2:pw+20,y1:ly,y2:ly,stroke:col,'stroke-width':2}));
-    g.appendChild(tx(pw+24,ly+4,groups[gi].name.slice(0,18),{'font-size':9,fill:col}));
+  const COLORS = ['#2563eb','#059669','#d97706','#7c3aed','#dc2626','#0891b2','#65a30d','#c026d3'];
+
+  curves.forEach((pts, gi) => {
+    const col = COLORS[gi % COLORS.length];
+    const path = pts.map((pt, i) => `${i===0?'M':'L'}${(pt.unc*pw).toFixed(1)},${(ph - pt.sr*ph).toFixed(1)}`).join(' ');
+    g.appendChild(mk('path', { d:path, stroke:col, 'stroke-width':2, fill:'none', 'stroke-linejoin':'round' }));
+
+    const idx = Math.min(Math.round(state.uncertaintyLevel * PARAMS.UNC_CURVE_STEPS), pts.length-1);
+    const curPt = pts[idx];
+    g.appendChild(mk('circle', { cx:(curPt.unc*pw).toFixed(1), cy:(ph - curPt.sr*ph).toFixed(1), r:4, fill:col, stroke:'white', 'stroke-width':1.5 }));
+
+    const ly = gi*15 + 6;
+    g.appendChild(mk('line', { x1:pw+10, x2:pw+22, y1:ly, y2:ly, stroke:col, 'stroke-width':2 }));
+    g.appendChild(txt(pw+26, ly+4, groups[gi].name.slice(0,20), { 'font-size':9, fill:col }));
   });
 
-  // Axes
-  g.appendChild(mk('line',{x1:0,x2:pw,y1:ph,y2:ph,stroke:'#cbd5e1','stroke-width':1}));
-  [0,25,50,75,100].forEach(p=>{
-    const x=(p/100)*pw;
-    g.appendChild(tx(x,ph+13,`${p}%`,{'text-anchor':'middle','font-size':9,fill:'#94a3b8'}));
+  g.appendChild(mk('line', { x1:0, x2:pw, y1:ph, y2:ph, stroke:'#94a3b8', 'stroke-width':1 }));
+  [0,25,50,75,100].forEach(p => {
+    const x = (p/100)*pw;
+    g.appendChild(txt(x, ph+13, `${p}%`, { 'text-anchor':'middle', 'font-size':9, fill:'#94a3b8' }));
   });
-  g.appendChild(tx(-32,ph/2,'MC success rate',{transform:`rotate(-90,-32,${ph/2})`, 'text-anchor':'middle','font-size':9,fill:'#94a3b8'}));
-  g.appendChild(tx(pw/2,ph+28,'Field uncertainty level',{'text-anchor':'middle','font-size':9,fill:'#94a3b8'}));
+  g.appendChild(txt(-34, ph/2, 'MC success rate', { transform:`rotate(-90,-34,${ph/2})`, 'text-anchor':'middle', 'font-size':9, fill:'#6b7280' }));
+  g.appendChild(txt(pw/2, ph+28, 'Field uncertainty level', { 'text-anchor':'middle', 'font-size':9, fill:'#6b7280' }));
 }
 
-function renderInsight(dests, groups, assignments) {
-  const unc=ST.uncertaintyLevel;
-  const cm=1-unc;
-  const unkCt={};
-  FACTORS.forEach(f=>{unkCt[f.id]=0;});
-  dests.forEach(d=>FACTORS.forEach(f=>{ if(d.factors[f.id].status==='unknown') unkCt[f.id]++; }));
-  const topUnk=[...FACTORS].sort((a,b)=>{
-    const wa=a.gk?PARAMS.GK_WEIGHT:PARAMS.NORM_WEIGHT, wb=b.gk?PARAMS.GK_WEIGHT:PARAMS.NORM_WEIGHT;
-    return (wb*unkCt[b.id])-(wa*unkCt[a.id]);
+function renderInsights(destinations, groups, assignments) {
+  const unc = state.uncertaintyLevel;
+  const confMult = 1 - unc;
+
+  const unknownCt = {};
+  FACTORS.forEach(f => { unknownCt[f.id] = 0; });
+  destinations.forEach(d => FACTORS.forEach(f => { if (d.factors[f.id].status === 'unknown') unknownCt[f.id]++; }));
+
+  const topUnknown = [...FACTORS].sort((a, b) => {
+    const wa = a.gk ? PARAMS.GATEKEEPER_WEIGHT : PARAMS.NORMAL_WEIGHT;
+    const wb = b.gk ? PARAMS.GATEKEEPER_WEIGHT : PARAMS.NORMAL_WEIGHT;
+    return (wb * unknownCt[b.id]) - (wa * unknownCt[a.id]);
   })[0];
-  const worst=assignments.reduce((w,a)=>a.primary.mc.sr<w.primary.mc.sr?a:w,assignments[0]);
-  const gkB=dests.filter(d=>FACTORS.some(f=>f.gk&&d.factors[f.id].status==='blocked'));
-  const meanSr=assignments.reduce((s,a)=>s+a.primary.mc.sr,0)/assignments.length;
-  const valUnk=FACTORS.filter(f=>unkCt[f.id]>0).sort((a,b)=>{
-    const wa=a.gk?PARAMS.GK_WEIGHT:1, wb=b.gk?PARAMS.GK_WEIGHT:1;
-    return (wb*unkCt[b.id])-(wa*unkCt[a.id]);
-  })[0];
-  const uncLbl=unc<=.2?'low':unc<=.5?'moderate':unc<=.75?'high':'very high';
 
-  let html=`<p>At <strong>${(unc*100).toFixed(0)}% field uncertainty</strong> (${uncLbl}), predicted mean success rate across
-  ${groups.length} evacuee group${groups.length>1?'s':''} is <strong>${(meanSr*100).toFixed(0)}%</strong>
-  (${PARAMS.MC_RUNS} MC runs per assignment).
-  ${topUnk&&unkCt[topUnk.id]>0?`Most intelligence-gapped factor: <strong>${topUnk.label}</strong> — unassessed at ${unkCt[topUnk.id]} of ${dests.length} destinations.`:''}</p>`;
+  const assigned = assignments.filter(a => !a.unassigned);
+  const unassignedCt = assignments.length - assigned.length;
+  const worst = assigned.length ? assigned.reduce((w, a) => a.primary.mc.successRate < w.primary.mc.successRate ? a : w, assigned[0]) : null;
+  const gkBlocked = destinations.filter(d => FACTORS.some(f => f.gk && d.factors[f.id].status === 'blocked'));
+  const meanSr = assigned.length ? assigned.reduce((s, a) => s + a.primary.mc.successRate, 0) / assigned.length : 0;
 
-  if(worst){html+=`<p>Highest-risk group: <strong>${worst.group.name}</strong>
-  (${worst.group.size.toLocaleString()} people, vulnerability ${worst.group.vuln}/5, urgency: ${worst.group.urgency}).
-  Predicted success: <strong>${(worst.primary.mc.sr*100).toFixed(0)}%</strong> ±${(worst.primary.mc.sd*100).toFixed(1)}% SD.
-  Primary risk factor: <strong>${worst.risk.label}</strong>.</p>`;}
+  const valuableUnknown = FACTORS.filter(f => unknownCt[f.id] > 0)
+    .sort((a, b) => {
+      const wa = a.gk ? PARAMS.GATEKEEPER_WEIGHT : PARAMS.NORMAL_WEIGHT;
+      const wb = b.gk ? PARAMS.GATEKEEPER_WEIGHT : PARAMS.NORMAL_WEIGHT;
+      return (wb * unknownCt[b.id]) - (wa * unknownCt[a.id]);
+    })[0];
 
-  if(gkB.length>0){html+=`<p><strong>Gatekeeper alert:</strong> ${gkB.map(d=>d.name).join(', ')} ${gkB.length>1?'have':'has'} at least one gatekeeper factor blocked —
-  legally or physically inaccessible regardless of other readiness scores. Readiness is hard-capped at ${(PARAMS.GK_CAP*100).toFixed(0)}%.</p>`;}
+  const uncLabel = unc <= 0.20 ? 'low' : unc <= 0.50 ? 'moderate' : unc <= 0.75 ? 'high' : 'very high';
 
-  if(valUnk){html+=`<p><strong>Highest information value:</strong> Resolving <strong>${valUnk.label}</strong>
-  ${valUnk.gk?'(a gatekeeper factor)':''} would reduce outcome uncertainty most.
-  ${valUnk.gk?'As a gatekeeper, confirming or ruling this out simultaneously unlocks or eliminates affected destinations — high-leverage intelligence for AI-assisted field assessment.':'Resolving this factor across destinations would improve composite scoring accuracy and reduce Monte Carlo variance.'}
-  This is the argument for prioritising AI-assisted real-time verification on high-weight unknown factors.</p>`;}
+  let html = `<p>At <strong>${(unc*100).toFixed(0)}% field uncertainty</strong> (${uncLabel}), predicted mean success rate across
+    ${assigned.length} assigned group${assigned.length!==1?'s':''} is <strong>${(meanSr*100).toFixed(0)}%</strong>
+    (${PARAMS.MC_RUNS} Monte Carlo runs each).
+    ${unassignedCt > 0 ? `<strong style="color:var(--col-blocked)">${unassignedCt} group${unassignedCt>1?'s':''} could not be assigned — all destinations at capacity.</strong>` : ''}
+    ${topUnknown && unknownCt[topUnknown.id] > 0
+      ? `Most intelligence-gapped factor: <strong>${topUnknown.label}</strong> — unassessed at ${unknownCt[topUnknown.id]} of ${destinations.length} destinations.`
+      : 'All factors have been assessed across all destinations.'}</p>`;
 
-  if(unc>.6){html+=`<p style="color:var(--t3);font-style:italic">At ${(unc*100).toFixed(0)}% uncertainty, assignment rankings are unstable — the optimal assignment under perfect information may differ from the current recommendation. Treat as indicative, not prescriptive.</p>`;}
+  if (worst) {
+    html += `<p>Highest-risk assigned group: <strong>${worst.group.name}</strong>
+    (${worst.group.size.toLocaleString()} people, vulnerability ${worst.group.vuln}/5, urgency: ${worst.group.urgency}).
+    Predicted success at assigned destination: <strong>${(worst.primary.mc.successRate*100).toFixed(0)}%</strong>
+    ±${(worst.primary.mc.stdDev*100).toFixed(1)}pp SD. Primary risk factor: <strong>${worst.riskFactor.label}</strong>.</p>`;
+  }
 
-  document.getElementById('insight-text').innerHTML=html;
+  if (gkBlocked.length > 0) {
+    const gkDetail = gkBlocked.map(d => `${d.name} (${blockedGkFactors(d).map(f=>statusLabel(f,'blocked')).join(', ')})`).join('; ');
+    html += `<p><strong>Gatekeeper alert:</strong> ${gkBlocked.length} destination${gkBlocked.length>1?'s':''}
+    excluded — ${gkDetail}. A site can be excluded for being legally or physically inaccessible
+    (Security, Authority consent) <em>or</em> because the host community is unwilling to receive evacuees
+    (Willingness) — the model treats all three as equally disqualifying, since no amount of food, shelter or
+    medical capacity substitutes for access, legality, or consent. Readiness is hard-capped at
+    ${(PARAMS.GK_BLOCKED_CAP*100).toFixed(0)}% regardless of other factor scores.</p>`;
+  }
+
+  if (valuableUnknown) {
+    html += `<p><strong>Highest information value:</strong> Resolving <strong>${valuableUnknown.label}</strong>
+    ${valuableUnknown.gk ? '(gatekeeper)' : ''} would most reduce outcome uncertainty.
+    ${valuableUnknown.gk
+      ? 'As a gatekeeper, confirming or ruling out this factor simultaneously unlocks or eliminates affected destinations — high-leverage intelligence. This is the argument for AI-assisted real-time field verification: directing limited surveillance capacity toward high-weight unknown factors maximises decision quality under time and resource pressure.'
+      : 'Resolving this unknown across destinations improves composite scoring accuracy and reduces Monte Carlo variance. AI-assisted ground-truth assessment tools (satellite imagery analysis, sensor fusion, field report NLP) would most directly benefit outcome predictability if deployed against this factor first.'}</p>`;
+  }
+
+  if (unc > 0.60) {
+    html += `<p style="font-style:italic;color:var(--col-text-secondary)">At ${(unc*100).toFixed(0)}% uncertainty,
+    assignment rankings are unstable — the "optimal" assignment under perfect information may differ from
+    the current recommendation. Decision-makers should treat these assignments as indicative, verify with
+    physical ground assessments, and maintain alternative routing.</p>`;
+  }
+
+  document.getElementById('insight-text').innerHTML = html;
 }
 
-function updateStats(dests, groups, assignments, cm) {
-  const viable=dests.filter(d=>{const{r,gkBlocked}=readiness(d,cm);return !gkBlocked&&r>=.20;}).length;
-  const gkB=dests.filter(d=>{const{gkBlocked}=readiness(d,cm);return gkBlocked;}).length;
-  const ppl=groups.reduce((s,g)=>s+g.size,0);
-  const sr=assignments.reduce((s,a)=>s+a.primary.mc.sr,0)/(assignments.length||1);
-  document.getElementById('s-ndest').textContent=dests.length;
-  document.getElementById('s-viable').textContent=viable;
-  document.getElementById('s-gkblk').textContent=gkB;
-  document.getElementById('s-ngrp').textContent=groups.length;
-  document.getElementById('s-ppl').textContent=ppl.toLocaleString();
-  document.getElementById('s-sr').textContent=`${(sr*100).toFixed(0)}%`;
-  document.getElementById('s-unc').textContent=`${(ST.uncertaintyLevel*100).toFixed(0)}%`;
+function updateStats(destinations, groups, assignments) {
+  const confMult = 1 - state.uncertaintyLevel;
+  const viable = destinations.filter(d => {
+    const { readiness, gkBlocked } = computeReadiness(d, confMult);
+    return !gkBlocked && readiness >= 0.20;
+  }).length;
+  const gkBlockedCt = destinations.filter(d => computeReadiness(d, confMult).gkBlocked).length;
+  const totalPpl = groups.reduce((s, g) => s + g.size, 0);
+  const assignedList = assignments.filter(a => !a.unassigned);
+  const meanSr = assignedList.length ? assignedList.reduce((s, a) => s + a.primary.mc.successRate, 0) / assignedList.length : 0;
+
+  document.getElementById('stat-ndest').textContent    = destinations.length;
+  document.getElementById('stat-viable').textContent   = viable;
+  document.getElementById('stat-ngroups').textContent  = groups.length;
+  document.getElementById('stat-evacuees').textContent = totalPpl.toLocaleString();
+  document.getElementById('stat-success').textContent  = `${(meanSr*100).toFixed(0)}%`;
+  document.getElementById('stat-unc').textContent      = `${(state.uncertaintyLevel*100).toFixed(0)}%`;
+  document.getElementById('stat-gkblocked').textContent = gkBlockedCt;
 }
 
-// ── State & run loop
-const ST = { dests:[], groups:[], assignments:[], curves:[], uncertaintyLevel:.30 };
-
-function run() {
-  const cm=1-ST.uncertaintyLevel;
-  const a=assign(ST.dests,ST.groups,cm);
-  ST.assignments=a;
-  renderDests(ST.dests,cm);
-  renderMatrix(ST.dests,a,cm);
-  renderOutcomes(a,ST.dests);
-  renderChart(ST.groups,ST.curves);
-  renderInsight(ST.dests,ST.groups,a);
-  updateStats(ST.dests,ST.groups,a,cm);
+function renderParamsPanel() {
+  const tbody = document.getElementById('params-tbody');
+  if (!tbody) return;
+  const pctKeys = new Set(['GK_BLOCKED_CAP','SCORE_OP','SCORE_PART','SCORE_BLOCKED','SCORE_UNKNOWN_BASE',
+    'W_READINESS','W_CAPACITY','W_PROXIMITY','W_VULN','SUCCESS_MIN_READINESS','MAX_PERTURB_PROB']);
+  tbody.innerHTML = Object.entries(PARAMS).map(([k, v]) => {
+    const display = pctKeys.has(k) ? `${(v*100).toFixed(0)}%` : v;
+    return `<tr>
+      <td style="padding:5px 8px;border:1px solid var(--col-border);font-family:var(--font-mono);font-size:11px;color:var(--col-text-primary)">${k}</td>
+      <td style="padding:5px 8px;border:1px solid var(--col-border);font-family:var(--font-mono);font-size:12px;font-weight:600;color:var(--col-accent)">${display}</td>
+      <td style="padding:5px 8px;border:1px solid var(--col-border);font-size:11px;color:var(--col-text-secondary)">${PARAM_DOCS[k] || '—'}</td>
+    </tr>`;
+  }).join('');
 }
 
-function generate() {
-  const seed=parseInt(document.getElementById('seed-input').value)||42;
-  const nD=Math.max(2,Math.min(16,parseInt(document.getElementById('n-dest').value)||8));
-  const nG=Math.max(1,Math.min(8, parseInt(document.getElementById('n-groups').value)||3));
-  const rng=new RNG(seed);
-  ST.dests=genDests(rng,nD);
-  ST.groups=genGroups(rng,nG);
-  // Validate
-  ST.dests.forEach((d,i)=>{
-    const miss=FACTORS.filter(f=>!d.factors[f.id]);
-    if(miss.length) console.error(`Dest ${i} missing factors`,miss.map(f=>f.id));
+// ============================================================
+// GLOBAL STATE + RUN LOOP
+// ============================================================
+const state = {
+  destinations: [],
+  groups: [],
+  assignments: [],
+  curves: [],
+  uncertaintyLevel: 0.30,
+};
+
+function runSimulation() {
+  const cm = 1 - state.uncertaintyLevel;
+  const assignments = assign(state.destinations, state.groups, cm);
+  state.assignments = assignments;
+  const infoValues = computeInfoValue(state.destinations, state.groups, cm);
+
+  renderDestCards(state.destinations, cm);
+  renderMatrix(state.destinations, assignments, cm);
+  renderOutcomes(assignments, state.destinations);
+  renderAlerts(assignments, state.destinations, cm);
+  renderChart(state.groups, state.curves);
+  renderInfoValue(infoValues);
+  renderInsights(state.destinations, state.groups, assignments);
+  updateStats(state.destinations, state.groups, assignments);
+  updateURL();
+}
+
+function generateScenario() {
+  const seed    = parseInt(document.getElementById('seed-input').value) || 42;
+  const nDest   = Math.max(2, Math.min(16, parseInt(document.getElementById('n-dest').value)   || 8));
+  const nGroups = Math.max(1, Math.min(8,  parseInt(document.getElementById('n-groups').value) || 3));
+
+  const rng = new RNG(seed);
+  state.destinations = generateDestinations(rng, nDest);
+  state.groups       = generateGroups(rng, nGroups);
+
+  state.destinations.forEach((d, i) => {
+    const missing = FACTORS.filter(f => !d.factors[f.id]);
+    if (missing.length) console.error(`Dest ${i} (${d.name}) missing factors:`, missing.map(f=>f.id));
+    if (d.capacity < PARAMS.CAP_MIN || d.capacity > PARAMS.CAP_MAX)
+      console.warn(`Dest ${i} capacity ${d.capacity} out of range`);
   });
-  ST.curves=buildCurves(ST.dests,ST.groups);
-  run();
+
+  state.curves = buildCurves(state.destinations, state.groups);
+  runSimulation();
 }
 
-document.getElementById('btn-gen').addEventListener('click',generate);
-document.getElementById('unc-slider').addEventListener('input',function(){
-  ST.uncertaintyLevel=this.value/100;
-  // Colour the value text based on level
-  const el=document.getElementById('unc-val');
-  el.textContent=`${this.value}%`;
-  el.style.color=this.value<34?'var(--op)':this.value<67?'var(--par)':'var(--blk)';
-  run();
+// ============================================================
+// EVENT WIRING
+// ============================================================
+document.getElementById('btn-generate').addEventListener('click', generateScenario);
+document.getElementById('btn-copy').addEventListener('click', copyLink);
+
+document.getElementById('uncertainty-slider').addEventListener('input', function() {
+  state.uncertaintyLevel = this.value / 100;
+  document.getElementById('uncertainty-value').textContent = `${this.value}%`;
+  runSimulation();
 });
-window.addEventListener('resize',()=>{ if(ST.groups.length) renderChart(ST.groups,ST.curves); });
 
-generate();
+window.addEventListener('resize', () => {
+  if (state.groups.length) renderChart(state.groups, state.curves);
+});
+
+// ============================================================
+// INITIALISE
+// ============================================================
+loadFromURL();
+renderParamsPanel();
+generateScenario();
 </script>
 </body>
 </html>
