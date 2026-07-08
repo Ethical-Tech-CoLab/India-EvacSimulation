@@ -1,8 +1,6 @@
-*
-!.gitignore
-!index.html
-!explainer.html
-!README.md
-!CONCEPT.md
-!ARCHITECTURE.md
-!BACKLOG.md
+*.xlsx
+*.csv
+*.docx
+*.zip
+~$*
+.DS_Store
