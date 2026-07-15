@@ -2,6 +2,8 @@
 
 A single-file, dependency-free research instrument that models how field-intelligence uncertainty degrades civilian evacuation decisions in armed conflict — built for a PhD project on civilian protection. All data is synthetic and reproducible from a seed number; no real locations or real datasets are used.
 
+**Live demo:** [indiaclarke03-ops.github.io/EvacSimulator](https://indiaclarke03-ops.github.io/EvacSimulator/)
+
 **This repo mirrors the primary/canonical repository:** [`Ethical-Tech-CoLab/India-EvacSimulation`](https://github.com/Ethical-Tech-CoLab/India-EvacSimulation). Develop there first; this copy should track it, not diverge from it (see [BACKLOG.md](BACKLOG.md) — this repo previously drifted out of date and has just been brought back in sync).
 
 ## Run it
