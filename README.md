@@ -2,9 +2,9 @@
 
 A single-file, dependency-free research instrument that models how field-intelligence uncertainty degrades civilian evacuation decisions in armed conflict — built for a PhD project on civilian protection. All data is synthetic and reproducible from a seed number; no real locations or real datasets are used.
 
-**Live demo:** [indiaclarke03-ops.github.io/EvacSimulator](https://indiaclarke03-ops.github.io/EvacSimulator/)
+**Live demo:** [ethical-tech-colab.github.io/India-EvacSimulation](https://ethical-tech-colab.github.io/India-EvacSimulation/)
 
-**This repo mirrors the primary/canonical repository:** [`Ethical-Tech-CoLab/India-EvacSimulation`](https://github.com/Ethical-Tech-CoLab/India-EvacSimulation). Develop there first; this copy should track it, not diverge from it (see [BACKLOG.md](BACKLOG.md) — this repo previously drifted out of date and has just been brought back in sync).
+**This is the primary/canonical repository.** [`indiaclarke03-ops/EvacSimulator`](https://github.com/indiaclarke03-ops/EvacSimulator) mirrors this tool but should be treated as downstream — develop here first.
 
 ## Run it
 
@@ -27,16 +27,15 @@ A key design point: the model distinguishes an **unassessed** factor ("Unknown")
 |---|---|
 | `index.html` | The tool itself — UI, simulation engine, and an in-page Methodology accordion |
 | `explainer.html` | Narrative walkthrough of the model, linked from "About this tool" and the "?" links throughout the tool |
+| `Evacuation_Simulator_Methodology.docx` | Full formula derivations, rationale, and academic/IHL citations — authoritative if it and the in-app docs ever disagree |
 | `CONCEPT.md` | The research problem, the readiness model, and the epistemic distinctions the tool insists on |
 | `ARCHITECTURE.md` | How it's actually built — execution pipeline, state, configuration surface |
-| `BACKLOG.md` | Open issues specific to this mirror repo |
-
-Full formula derivations, rationale, and academic/IHL citations are in `Evacuation_Simulator_Methodology.docx`, kept in the primary repo linked above.
+| `BACKLOG.md` | Open issues and suggested next steps from a close read of the code and methodology doc |
 
 ## Reproducibility
 
-Every output is fully determined by four values: seed, number of destinations (N), number of evacuee groups (M), and uncertainty level. The **Copy link** button writes all four into the page URL and copies it to your clipboard — pasting that URL anywhere and opening it regenerates the exact same scenario.
+Every output is fully determined by four values: seed, number of destinations (N), number of evacuee groups (M), and uncertainty level. The **Copy link** button writes all four into the page URL and copies it to your clipboard — pasting that URL anywhere and opening it regenerates the exact same scenario. Cite outputs as `seed=42, N=8, M=3, uncertainty=30%` (see the methodology doc's Reproducibility Protocol for the full citation format).
 
 ## Status
 
-Conceptual demonstration tool for thesis research, not an operational decision-support system. Outputs require empirical calibration before any real-world use — see the Assumptions & Limitations section in the Methodology accordion (in-app).
+Conceptual demonstration tool for thesis research, not an operational decision-support system. Outputs require empirical calibration before any real-world use — see the Assumptions & Limitations section in the Methodology accordion (in-app) or §10 of the methodology document.

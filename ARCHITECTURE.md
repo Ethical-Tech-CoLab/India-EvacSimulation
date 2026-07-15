@@ -8,9 +8,12 @@ This is a **single-file HTML/JS application with no external dependencies** — 
 index.html          the tool itself (~1,300 lines: styles, markup, simulation engine, renderers)
 explainer.html       companion page — narrative walkthrough of the model, linked from the
                      "About this tool" button and from ? links throughout index.html
+Evacuation_Simulator_Methodology.docx   full formula derivations, rationale, and citations
+                     (index.html and explainer.html both summarize this document —
+                     it is the authoritative source if they ever disagree)
 ```
 
-This repo mirrors [`Ethical-Tech-CoLab/India-EvacSimulation`](https://github.com/Ethical-Tech-CoLab/India-EvacSimulation), which is the canonical development location and also holds `Evacuation_Simulator_Methodology.docx` — the full formula derivations, rationale, and citations that both `index.html` and `explainer.html` summarize. Consult that document (or that repo) for anything this file doesn't cover.
+Two supplementary raw data files (an ACLED CSV export and several UNHCR/OCHA "5W" spreadsheets) also live in this directory. They are **not read or referenced by the application** — they are background research material from earlier exploration, not a data source for the current synthetic-only model. See BACKLOG.md for a suggestion on where these belong.
 
 ## Execution pipeline
 
