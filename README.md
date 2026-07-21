@@ -1,5 +1,8 @@
 # Evacuation Readiness & Uncertainty Simulator
 
+**[Live site](https://ethical-tech-colab.github.io/India-EvacSimulation/)** ·
+**[Research report](ERUS-Paper.md)** (plain-language, non-technical)
+
 A single-file, dependency-free research instrument that models how field-intelligence uncertainty degrades civilian evacuation decisions in armed conflict — built for a PhD project on civilian protection. All data is synthetic and reproducible from a seed number; no real locations or real datasets are used.
 
 **Live demo:** [ethical-tech-colab.github.io/India-EvacSimulation](https://ethical-tech-colab.github.io/India-EvacSimulation/)
