@@ -42,3 +42,19 @@ Every output is fully determined by four values: seed, number of destinations (N
 ## Status
 
 Conceptual demonstration tool for thesis research, not an operational decision-support system. Outputs require empirical calibration before any real-world use — see the Assumptions & Limitations section in the Methodology accordion (in-app) or §10 of the methodology document.
+
+---
+
+## Peer Review
+
+An independent academic peer review of this report is available in [`peer-review/`](peer-review/) ([Word](peer-review/erus-Peer-Review.docx) &middot; [Markdown](peer-review/erus-Peer-Review.md)).
+
+**Recommendation:** Major revisions
+
+**What the review found:**
+
+- The headline finding (worse information yields worse outcomes) is an algebraic identity of the confidence formula, verified in code, not a demonstrated result (S1.3, S14.1).
+- The report poses three research questions and describes all outputs but reports no actual numbers, tables, or figures (S2.5, S6, S9).
+- The 40% success threshold is misattributed to the UNHCR Handbook despite readiness being the tool's own internal construct (S5.10, S8.2).
+
+**Noted strength:** The generate-once architecture, the Unknown-vs-Unwilling distinction (S7.2), and URL-level reproducibility are genuinely well-designed.
