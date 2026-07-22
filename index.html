@@ -708,13 +708,23 @@ function computeReadiness(dest, confMult, overrides) {
 // ============================================================
 // MONTE CARLO ENGINE (unchanged logic; added optional runs param)
 // ============================================================
+// Perturbation ordinal. `unknown` is deliberately NOT part of it: "not
+// assessed" is an epistemic state, not one step worse than "blocked". When
+// `unknown` sat at the end of STATUSES, a blocked gatekeeper could perturb to
+// `unknown` — which scores SCORE_UNKNOWN_BASE and does not set gkBlocked — so a
+// genuinely blocked/unwilling site could be counted as a Monte-Carlo success,
+// evading the GK_BLOCKED_CAP hard cap and inflating reported success rates.
+// Perturbation now stays inside operational <-> partial <-> blocked, and
+// `unknown` neither perturbs in nor out.
+const PERTURB_ORDER = ['operational', 'partial', 'blocked'];
+
 function perturbStatus(status, effConf, rng) {
   if (status === 'unknown') return status;
   const prob = PARAMS.MAX_PERTURB_PROB * (1 - effConf);
   if (rng.next() > prob) return status;
-  const idx = STATUSES.indexOf(status);
+  const idx = PERTURB_ORDER.indexOf(status);
   const dir = rng.next() < 0.5 ? -1 : 1;
-  return STATUSES[Math.max(0, Math.min(STATUSES.length - 1, idx + dir))];
+  return PERTURB_ORDER[Math.max(0, Math.min(PERTURB_ORDER.length - 1, idx + dir))];
 }
 
 function monteCarlo(dest, group, confMult, seed, runs) {
@@ -862,6 +872,16 @@ function buildCurves(destinations, groups) {
 // ============================================================
 // URL STATE
 // ============================================================
+// Parse an integer, falling back to `fallback` ONLY when the value is absent or
+// non-numeric. `0` is a legitimate value and must survive round-tripping: the
+// falsy-coalescing form (`parseInt(x) || fallback`) silently rewrote 0 to the
+// default, so a link shared at 0% uncertainty (or seed 0) reopened with
+// different settings and the URL-reproducibility guarantee failed at baseline.
+function intOr(raw, fallback) {
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 function updateURL() {
   const params = new URLSearchParams();
   params.set('seed', document.getElementById('seed-input').value);
@@ -877,7 +897,7 @@ function loadFromURL() {
   if (params.has('n'))    document.getElementById('n-dest').value    = params.get('n');
   if (params.has('m'))    document.getElementById('n-groups').value  = params.get('m');
   if (params.has('u')) {
-    const u = Math.max(0, Math.min(100, parseInt(params.get('u')) || 30));
+    const u = Math.max(0, Math.min(100, intOr(params.get('u'), 30)));
     state.uncertaintyLevel = u / 100;
     document.getElementById('uncertainty-slider').value = u;
     document.getElementById('uncertainty-value').textContent = `${u}%`;
@@ -1319,9 +1339,9 @@ function runSimulation() {
 }
 
 function generateScenario() {
-  const seed    = parseInt(document.getElementById('seed-input').value) || 42;
-  const nDest   = Math.max(2, Math.min(16, parseInt(document.getElementById('n-dest').value)   || 8));
-  const nGroups = Math.max(1, Math.min(8,  parseInt(document.getElementById('n-groups').value) || 3));
+  const seed    = intOr(document.getElementById('seed-input').value, 42);
+  const nDest   = Math.max(2, Math.min(16, intOr(document.getElementById('n-dest').value,   8)));
+  const nGroups = Math.max(1, Math.min(8,  intOr(document.getElementById('n-groups').value, 3)));
 
   const rng = new RNG(seed);
   state.destinations = generateDestinations(rng, nDest);
