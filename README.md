@@ -47,7 +47,7 @@ Conceptual demonstration tool for thesis research, not an operational decision-s
 
 ## Peer Review
 
-An independent academic peer review of this report is available in [`peer-review/`](peer-review/) ([Word](peer-review/erus-Peer-Review.docx) &middot; [Markdown](peer-review/erus-Peer-Review.md)).
+The full independent academic peer review of this report is in [PEER-REVIEW.md](PEER-REVIEW.md) (also available as [Word](peer-review/erus-Peer-Review.docx) under [`peer-review/`](peer-review/)).
 
 **Recommendation:** Major revisions
 
