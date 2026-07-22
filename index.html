@@ -882,6 +882,21 @@ function intOr(raw, fallback) {
   return Number.isFinite(n) ? n : fallback;
 }
 
+// Single source of truth for the scenario-input bounds. loadFromURL and
+// generateScenario both read these so the values shown in the inputs always
+// describe the scenario that was actually simulated.
+const INPUT_BOUNDS = {
+  seed:    { def: 42 },                    // no range clamp: any integer is a valid stream
+  nDest:   { def: 8, min: 2, max: 16 },
+  nGroups: { def: 3, min: 1, max: 8 },
+};
+
+function boundInt(raw, b) {
+  const n = intOr(raw, b.def);
+  if (b.min === undefined) return n;
+  return Math.max(b.min, Math.min(b.max, n));
+}
+
 function updateURL() {
   const params = new URLSearchParams();
   params.set('seed', document.getElementById('seed-input').value);
@@ -893,9 +908,11 @@ function updateURL() {
 
 function loadFromURL() {
   const params = new URLSearchParams(window.location.search);
-  if (params.has('seed')) document.getElementById('seed-input').value = params.get('seed');
-  if (params.has('n'))    document.getElementById('n-dest').value    = params.get('n');
-  if (params.has('m'))    document.getElementById('n-groups').value  = params.get('m');
+  // Normalise before assigning: an out-of-range or non-numeric URL param must not
+  // be displayed as if it were the value simulated (generateScenario clamps too).
+  if (params.has('seed')) document.getElementById('seed-input').value = boundInt(params.get('seed'), INPUT_BOUNDS.seed);
+  if (params.has('n'))    document.getElementById('n-dest').value     = boundInt(params.get('n'),    INPUT_BOUNDS.nDest);
+  if (params.has('m'))    document.getElementById('n-groups').value   = boundInt(params.get('m'),    INPUT_BOUNDS.nGroups);
   if (params.has('u')) {
     const u = Math.max(0, Math.min(100, intOr(params.get('u'), 30)));
     state.uncertaintyLevel = u / 100;
@@ -931,7 +948,7 @@ function renderDestCards(destinations, confMult) {
   container.innerHTML = '';
   destinations.forEach(dest => {
     const { readiness, gkBlocked } = computeReadiness(dest, confMult);
-    const mc0 = state.groups.length ? monteCarlo(dest, state.groups[0], confMult, 88888 + dest.id.charCodeAt(1)) : null;
+    const mc0 = state.groups.length ? monteCarlo(dest, state.groups[0], confMult, 88888 + intOr(dest.id.slice(1), 0)) : null;
     const blockedGks = blockedGkFactors(dest);
 
     const card = document.createElement('div');
@@ -1339,9 +1356,9 @@ function runSimulation() {
 }
 
 function generateScenario() {
-  const seed    = intOr(document.getElementById('seed-input').value, 42);
-  const nDest   = Math.max(2, Math.min(16, intOr(document.getElementById('n-dest').value,   8)));
-  const nGroups = Math.max(1, Math.min(8,  intOr(document.getElementById('n-groups').value, 3)));
+  const seed    = boundInt(document.getElementById('seed-input').value,  INPUT_BOUNDS.seed);
+  const nDest   = boundInt(document.getElementById('n-dest').value,      INPUT_BOUNDS.nDest);
+  const nGroups = boundInt(document.getElementById('n-groups').value,    INPUT_BOUNDS.nGroups);
 
   const rng = new RNG(seed);
   state.destinations = generateDestinations(rng, nDest);
