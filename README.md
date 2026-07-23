@@ -53,8 +53,13 @@ The full independent academic peer review of this report is in [PEER-REVIEW.md](
 
 **What the review found:**
 
-- The headline finding (worse information yields worse outcomes) is an algebraic identity of the confidence formula, verified in code, not a demonstrated result (S1.3, S14.1).
-- The report poses three research questions and describes all outputs but reports no actual numbers, tables, or figures (S2.5, S6, S9).
-- The 40% success threshold is misattributed to the UNHCR Handbook despite readiness being the tool's own internal construct (S5.10, S8.2).
+- The headline finding (worse information yields worse outcomes) is an algebraic identity of the confidence formula, verified in code, not a demonstrated result (S1.3, S14.1). — **Fixed.**
+- The report poses three research questions and describes all outputs but reports no actual numbers, tables, or figures (S2.5, S6, S9). — *Open.*
+- The 40% success threshold is misattributed to the UNHCR Handbook despite readiness being the tool's own internal construct (S5.10, S8.2). — **Fixed.**
+
+### Revisions applied
+
+- **The 40% threshold is no longer attributed to UNHCR.** Readiness is this tool's own composite of seven factor scores, so no external handbook could define a minimum readiness threshold for it. The floor is now labelled an unsourced, uncalibrated internal modelling assumption in the paper (S5.10, S8.2) and in the source tables of both `index.html` and `explainer.html`, where it appears as its own row reading "No external source." The UNHCR Handbook is retained for what it does support — informing which readiness factors are worth modelling.
+- **The headline is reframed as a built-in assumption rather than a result** (S1.3, S14.1). Uncertainty enters at exactly one place, `effectiveConf = baseConf × (1 − fieldUncertainty)`, and factor scores are `base × (0.5 + 0.5 × effectiveConf)` — monotonically increasing in confidence. The downward sensitivity curve is therefore an algebraic identity of the scoring rule, and the tool could not produce any other shape. The contribution is restated as *operationalising* the premise explicitly in one auditable line, not demonstrating it, with a note that no result in the paper should be read as independent evidence for it.
 
 **Noted strength:** The generate-once architecture, the Unknown-vs-Unwilling distinction (S7.2), and URL-level reproducibility are genuinely well-designed.
