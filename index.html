@@ -474,7 +474,7 @@ body { font-family: var(--font-main); background: var(--col-bg); color: var(--co
           <p><strong>Assumptions</strong></p>
           <ul>
             <li>Factor statuses are treated as independent — real-world correlation (e.g. security and authority consent often co-vary) is not modelled.</li>
-            <li>The 40% readiness success threshold is an operational approximation; the exact threshold should be calibrated against field data in applied use.</li>
+            <li>The 40% readiness success threshold is an <strong>unsourced internal modelling assumption</strong>, not a standard drawn from any humanitarian source. Readiness is this tool's own composite construct, so no external handbook could define a threshold for it. The figure is uncalibrated and should be calibrated against field data before any applied use.</li>
             <li>Status perturbation shifts by exactly one ordinal level — this is a simplification; real mis-assessments may jump multiple levels (e.g. operational reported as blocked).</li>
             <li>Greedy urgency-ordered assignment prevents capacity contention but does not optimise globally — a group assigned early may block a better match for a later group.</li>
             <li>Distance is used as a proxy for operational burden; real routing constraints (road access, checkpoints, fuel) are not modelled.</li>
@@ -505,7 +505,8 @@ body { font-family: var(--font-main); background: var(--col-bg); color: var(--co
           <tr><td>Additional Protocol I (1977), Art. 12 &amp; 58</td><td>Protection of medical units (Medical capacity) and precautions against attack (Security)</td></tr>
           <tr><td>IASC (2007) Guidelines</td><td>Host-authority consent framework grounding the Authority consent gatekeeper factor</td></tr>
           <tr><td>SPHERE Handbook (2018, 4th ed.)</td><td>Minimum standards — 3.5m²/person shelter, 15L/person/day water — behind the Shelter and Food &amp; water factors</td></tr>
-          <tr><td>UNHCR (2007), <em>Handbook for Emergencies</em> (3rd ed.)</td><td>Source of the 40% minimum readiness viability threshold (§3, SUCCESS_MIN_READINESS)</td></tr>
+          <tr><td>UNHCR (2007), <em>Handbook for Emergencies</em> (3rd ed.)</td><td>Informs <em>which</em> readiness factors exist. It is <strong>not</strong> the source of the 40% threshold &mdash; see the row below</td></tr>
+          <tr><td><strong>No external source</strong></td><td>The 40% minimum readiness viability threshold (§3, <code>SUCCESS_MIN_READINESS</code>) is an <strong>internal modelling assumption</strong>. Readiness is this tool's own composite of seven factor scores, so no external handbook can define a threshold for it. The figure is uncalibrated and was chosen by the authors</td></tr>
         </tbody>
       </table>
       <p style="margin-top:8px">Full citation detail is in <code style="font-family:var(--font-mono);font-size:10.5px;background:#f1f4f8;padding:1px 4px;border-radius:3px">Evacuation_Simulator_Methodology.docx</code> §14 (References) in the project repository. This table is a summary of that document, checked directly against it — the methodology doc is authoritative if the two ever diverge. Note the Willingness factor's gatekeeper promotion (§1) and the 500-run Monte Carlo default (§3) postdate methodology doc v1.0 and are not yet reflected there.</p>
