@@ -36,6 +36,6 @@ Uncertainty operates at two levels that multiply together: a **base confidence**
 
 ## Intended use vs. scope
 
-This is illustrative, not predictive. It is designed to make an uncertainty-propagation argument legible for thesis examiners and stakeholders, and to identify — via the Factor Information Value panel — which unknowns, if resolved, would move outcomes the most. It is not calibrated against empirical field data, and every numeric threshold (40% viability floor, 0.85 max perturbation probability, the specific factor weights) is a modelling assumption open to challenge, documented as such in `Evacuation_Simulator_Methodology.docx`.
+This is illustrative, not predictive. It is designed to make an uncertainty-propagation argument legible for thesis examiners and stakeholders, and to identify — via the Factor Information Value panel — which unknowns, if resolved, would move outcomes the most. It is not calibrated against empirical field data, and every numeric threshold (40% viability floor, 0.85 max perturbation probability, the specific factor weights) is a modelling assumption open to challenge, documented as such in [METHODOLOGY.md](METHODOLOGY.md).
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for how this is implemented, and the methodology document for full formula derivations and citations.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for how this is implemented, and [METHODOLOGY.md](METHODOLOGY.md) for full formula derivations and citations.

@@ -2,18 +2,24 @@
 
 ## Shape of the codebase
 
-This is a **single-file HTML/JS application with no external dependencies** — no build step, no package manager, no framework. Everything (markup, CSS, simulation logic, rendering) lives in `index.html`. This is a deliberate choice for a research artifact: it must run by opening a file in a browser, forever, without a toolchain to rot.
+This is a **dependency-free HTML/JS application with no build step or package manager** — no framework, nothing to install to run it. Markup, CSS, and rendering live in `index.html`; the simulation engine itself lives in `engine.js`, loaded by `index.html` as a plain classic `<script>` (its top-level `const`/`function` declarations share the page's global scope with the inline script that follows it — no bundler, no module loader). This split exists so the same engine code is `require()`-able from Node for the test suite under `tests/`, without changing how the page loads in a browser. This is a deliberate choice for a research artifact: it must run by opening a file in a browser, forever, without a toolchain to rot.
 
 ```
-index.html          the tool itself (~1,300 lines: styles, markup, simulation engine, renderers)
+index.html          UI, rendering, in-page Methodology accordion (~1,000 lines)
+engine.js            the simulation engine — RNG, scoring, Monte Carlo, assignment;
+                     DOM-free, loaded by index.html and require()'d by tests/
+tests/engine.test.js  regression suite for engine.js (Node's built-in test runner,
+                     run via `npm test`; zero npm dependencies)
 explainer.html       companion page — narrative walkthrough of the model, linked from the
                      "About this tool" button and from ? links throughout index.html
-Evacuation_Simulator_Methodology.docx   full formula derivations, rationale, and citations
-                     (index.html and explainer.html both summarize this document —
-                     it is the authoritative source if they ever disagree)
+METHODOLOGY.md        full formula derivations, rationale, and citations — tracked in
+                     git and updated alongside engine.js; authoritative for formulas if
+                     it and the in-app docs ever disagree
 ```
 
-Two supplementary raw data files (an ACLED CSV export and several UNHCR/OCHA "5W" spreadsheets) also live in this directory. They are **not read or referenced by the application** — they are background research material from earlier exploration, not a data source for the current synthetic-only model. See BACKLOG.md for a suggestion on where these belong.
+A `Evacuation_Simulator_Methodology.docx` was previously named here as the authoritative methodology source. It was excluded from version control by `.gitignore` and had fallen behind the code; it has been retired in favour of `METHODOLOGY.md`, which is git-tracked. See `METHODOLOGY.md`'s own "Relationship to the old .docx" section for the full history.
+
+Two supplementary raw data files (an ACLED CSV export and several UNHCR/OCHA "5W" spreadsheets) were noted here in an earlier version of this document as living alongside the application in some local checkouts. They are **not read or referenced by the application**, are excluded from `.gitignore`, and — checked against this repository's full commit history — have never actually been committed to it (see `BACKLOG.md`).
 
 ## Execution pipeline
 
@@ -44,7 +50,7 @@ A single mutable object, `state`, holds everything: `destinations`, `groups`, `a
 
 ## Configuration surface
 
-All tunable constants live in one object, `PARAMS`, at the top of the script, with human-readable descriptions in the adjacent `PARAM_DOCS` object — the same pairing renders live in the "⚙ Model Parameters" panel in the UI. This is the intended entry point for sensitivity analysis: change a value in `PARAMS`, reload, observe the effect, with no other code changes required.
+All tunable constants live in one object, `PARAMS`, at the top of `engine.js`, with human-readable descriptions in the adjacent `PARAM_DOCS` object in `index.html` — the same pairing renders live in the "⚙ Model Parameters" panel in the UI. This is the intended entry point for sensitivity analysis: change a value in `PARAMS`, reload, observe the effect, with no other code changes required.
 
 ## Factor model
 

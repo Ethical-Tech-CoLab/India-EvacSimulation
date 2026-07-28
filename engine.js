@@ -38,6 +38,16 @@ const PARAMS = {
   SIZE_MIN: 50, SIZE_MAX: 2000,
 
   MAX_PERTURB_PROB: 0.85,
+
+  // Runs per pairing in the Factor Information Value panel's counterfactual
+  // re-simulation (computeInfoValue). Originally 100, well below MC_RUNS: at
+  // a ~30% baseline success rate that gives each estimate a standard error
+  // of roughly 5-6 percentage points, which is comparable to the deltas the
+  // panel reports and can produce nonsensical negative "gains" from a
+  // change (Unknown -> Operational) that can only help. Raised to match
+  // MC_RUNS so the panel's ranking is trustworthy at the same resolution as
+  // the rest of the tool; see BACKLOG.md.
+  INFO_RUNS: 500,
 };
 
 const FACTORS = [
@@ -281,7 +291,7 @@ function assignForInfoValue(destinations, groups, confMult, runs, seedOffset) {
 }
 
 function computeInfoValue(destinations, groups, confMult) {
-  const INFO_RUNS = 100;
+  const INFO_RUNS = PARAMS.INFO_RUNS;
   const BASE_SEED = 200001;
 
   const baseResults = assignForInfoValue(destinations, groups, confMult, INFO_RUNS, BASE_SEED);
@@ -313,8 +323,21 @@ function buildCurves(destinations, groups) {
     for (let lvl = 0; lvl <= PARAMS.UNC_CURVE_STEPS; lvl++) {
       const unc = lvl / PARAMS.UNC_CURVE_STEPS;
       const cm  = 1 - unc;
-      let bestDest = destinations[0], bestComp = -Infinity;
-      destinations.forEach((d, di) => {
+      // Rank by composite score among capacity-viable destinations only,
+      // matching assign()'s viability filter. Without this filter, the
+      // "best" destination at a given uncertainty level could be one whose
+      // capacity is too small for the group — compositeScore only discounts
+      // insufficient capacity via capFit, it doesn't exclude it — and
+      // monteCarlo's success condition (dest.capacity >= group.size) would
+      // then force a flat 0% success rate at that level regardless of
+      // readiness, which can make the curve misleadingly non-monotonic when
+      // a viable destination overtakes it at a higher uncertainty level.
+      // Falls back to ranking all destinations only if none have enough
+      // capacity for this group at all, so a point is always plotted.
+      const viable = destinations.filter(d => d.capacity >= group.size);
+      const candidates = viable.length > 0 ? viable : destinations;
+      let bestDest = candidates[0], bestComp = -Infinity;
+      candidates.forEach((d, di) => {
         const { comp } = compositeScore(d, group, cm);
         if (comp > bestComp) { bestComp = comp; bestDest = d; }
       });

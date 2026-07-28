@@ -92,6 +92,10 @@ body { font-family: var(--font-main); background: var(--col-bg); color: var(--co
 #matrix-table td.group-label { text-align: left; font-family: var(--font-main); font-weight: 500; background: #f8fafc; white-space: nowrap; }
 #matrix-table td.assigned { outline: 2px solid var(--col-accent); outline-offset: -2px; font-weight: 700; }
 #matrix-table td.best-unassigned { outline: 2px dashed var(--col-blocked); outline-offset: -2px; opacity: 0.75; }
+#matrix-scroll.compact #matrix-table th, #matrix-scroll.compact #matrix-table td { padding: 2px 4px; font-size: 9px; }
+#matrix-scroll.compact #matrix-table th.row-hdr { min-width: 90px; }
+.compact-toggle { display: flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 400; text-transform: none; letter-spacing: normal; color: var(--col-text-secondary); margin-left: auto; cursor: pointer; }
+.compact-toggle input { cursor: pointer; }
 
 /* Outcome table — 5-column grid with urgency column */
 .outcome-row { display: grid; grid-template-columns: 1.4fr 0.65fr 1.2fr 0.8fr 1fr; gap: 8px; padding: 8px 4px; border-bottom: 1px solid #f1f5f9; align-items: start; }
@@ -319,7 +323,9 @@ body { font-family: var(--font-main); background: var(--col-bg); color: var(--co
   </div>
   <div id="right-panel">
     <div class="panel-card">
-      <div class="section-hdr">Assignment Matrix — Composite Scores &amp; Monte Carlo Success Rates (mean ± 1 SD) <a class="qmark" href="explainer.html#card-6" target="_blank" rel="noopener" title="How is the assignment algorithm scored?">?</a></div>
+      <div class="section-hdr">Assignment Matrix — Composite Scores &amp; Monte Carlo Success Rates (mean ± 1 SD) <a class="qmark" href="explainer.html#card-6" target="_blank" rel="noopener" title="How is the assignment algorithm scored?">?</a>
+        <label class="compact-toggle"><input type="checkbox" id="matrix-compact-toggle"> Compact</label>
+      </div>
       <div id="matrix-scroll"><div id="matrix-container"></div></div>
     </div>
     <div class="panel-card">
@@ -511,7 +517,7 @@ body { font-family: var(--font-main); background: var(--col-bg); color: var(--co
           <tr><td><strong>No external source</strong></td><td>The 40% minimum readiness viability threshold (§3, <code>SUCCESS_MIN_READINESS</code>) is an <strong>internal modelling assumption</strong>. Readiness is this tool's own composite of seven factor scores, so no external handbook can define a threshold for it. The figure is uncalibrated and was chosen by the authors</td></tr>
         </tbody>
       </table>
-      <p style="margin-top:8px">Full citation detail is in <code style="font-family:var(--font-mono);font-size:10.5px;background:#f1f4f8;padding:1px 4px;border-radius:3px">Evacuation_Simulator_Methodology.docx</code> §14 (References) in the project repository. This table is a summary of that document, checked directly against it — the methodology doc is authoritative if the two ever diverge. Note the Willingness factor's gatekeeper promotion (§1) and the 500-run Monte Carlo default (§3) postdate methodology doc v1.0 and are not yet reflected there.</p>
+      <p style="margin-top:8px">Full citation detail is in <code style="font-family:var(--font-mono);font-size:10.5px;background:#f1f4f8;padding:1px 4px;border-radius:3px">METHODOLOGY.md</code> §8 (References) in the project repository. This table is a summary of that document — <code style="font-family:var(--font-mono);font-size:10.5px;background:#f1f4f8;padding:1px 4px;border-radius:3px">METHODOLOGY.md</code> is authoritative if the two ever diverge, and unlike its predecessor it is tracked in version control and updated in the same commit as any change to the formulas it documents.</p>
     </div>
 
   </div>
@@ -531,6 +537,7 @@ body { font-family: var(--font-main); background: var(--col-bg); color: var(--co
 
 const PARAM_DOCS = {
   MC_RUNS:               'Monte Carlo iterations per (group, destination) pair',
+  INFO_RUNS:              'Monte Carlo iterations per pairing in the Factor Information Value panel',
   UNC_CURVE_STEPS:       'Data points on the uncertainty sensitivity curve',
   GATEKEEPER_WEIGHT:     'Weight multiplier for gatekeeper factors (Security, Authority)',
   NORMAL_WEIGHT:         'Weight for standard (non-gatekeeper) factors',
@@ -1077,6 +1084,10 @@ function generateScenario() {
 // ============================================================
 document.getElementById('btn-generate').addEventListener('click', generateScenario);
 document.getElementById('btn-copy').addEventListener('click', copyLink);
+
+document.getElementById('matrix-compact-toggle').addEventListener('change', function() {
+  document.getElementById('matrix-scroll').classList.toggle('compact', this.checked);
+});
 
 document.getElementById('uncertainty-slider').addEventListener('input', function() {
   state.uncertaintyLevel = this.value / 100;

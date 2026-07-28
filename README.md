@@ -40,7 +40,7 @@ A key design point: the model distinguishes an **unassessed** factor ("Unknown")
 | `index.html` | The tool itself — UI and an in-page Methodology accordion, loading `engine.js` for the simulation logic |
 | `engine.js` | The scoring, Monte Carlo, and assignment engine — pure, DOM-free, and shared between the browser (as a plain script) and the test suite (as a Node module) |
 | `explainer.html` | Narrative walkthrough of the model, linked from "About this tool" and the "?" links throughout the tool |
-| `Evacuation_Simulator_Methodology.docx` | Full formula derivations, rationale, and academic/IHL citations — authoritative if it and the in-app docs ever disagree |
+| `METHODOLOGY.md` | Full formula derivations, rationale, and academic/IHL citations — tracked in git, updated alongside `engine.js`, authoritative for formulas if it and the in-app docs ever disagree |
 | `CONCEPT.md` | The research problem, the readiness model, and the epistemic distinctions the tool insists on |
 | `ARCHITECTURE.md` | How it's actually built — execution pipeline, state, configuration surface |
 | `BACKLOG.md` | Open issues and suggested next steps from a close read of the code and methodology doc |
@@ -60,7 +60,7 @@ Conceptual demonstration tool for thesis research, not an operational decision-s
 
 ## Peer Review
 
-The full independent academic peer review of this report is in [PEER-REVIEW.md](PEER-REVIEW.md) (also available as [Word](peer-review/erus-Peer-Review.docx) under [`peer-review/`](peer-review/)).
+The full independent academic peer review of this report is in [PEER-REVIEW.md](PEER-REVIEW.md) (a copy also lives at [`peer-review/erus-Peer-Review.md`](peer-review/erus-Peer-Review.md); a Word version was referenced here previously but is excluded from version control by `.gitignore` and is not actually present in this repository — the Markdown copy is canonical).
 
 **Recommendation:** Major revisions
 
