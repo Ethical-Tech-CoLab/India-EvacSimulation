@@ -1,0 +1,8 @@
+{
+  "name": "erus",
+  "private": true,
+  "description": "Evacuation Readiness & Uncertainty Simulator — no build step, no runtime dependencies. This file exists only to wire up `npm test`.",
+  "scripts": {
+    "test": "node --test"
+  }
+}

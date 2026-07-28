@@ -25,7 +25,7 @@ A note on the name. This repository is called India-EvacSimulation because its a
 
 1.3 The tool exists to make one relationship legible: the same underlying reality, assessed under worse information, produces materially worse predicted outcomes. The tool provides a single slider labelled Field Uncertainty. Moving it does not change any fact about any destination. It changes only how much confidence the assessment carries. Predicted success rates fall anyway. That gap between what is true and what is knowable is what the project is about.
 
-State plainly what kind of claim this is. **It is an assumption built into the scoring rule, not a result the tool discovered.** Uncertainty enters the model at exactly one place -- `effectiveConf = baseConf x (1 - fieldUncertainty)` -- and a factor's score is `base x (0.5 + 0.5 x effectiveConf)`, which increases monotonically in effective confidence. Raising uncertainty therefore lowers every non-blocked factor's score deterministically, which lowers mean readiness, which pushes more Monte Carlo trials below the forty per cent success floor. The perturbation probability, `0.85 x (1 - effectiveConf)`, rises with uncertainty as well, adding variance near that threshold. The downward sensitivity curve is an algebraic identity of the scoring rule; the tool could not produce any other shape.
+State plainly what kind of claim this is. **It is an assumption built into the scoring rule, not a result the tool discovered.** Uncertainty enters the model at exactly one place -- `effectiveConf = baseConf x (1 - fieldUncertainty)` -- and a factor's score is `base x (0.5 + 0.5 x effectiveConf)`, which increases monotonically in effective confidence. Raising uncertainty therefore lowers every non-blocked factor's score deterministically, which lowers mean readiness, which pushes more Monte Carlo trials below the forty per cent success floor. The perturbation probability, `0.85 x (1 - effectiveConf)`, rises with uncertainty as well, adding variance near that threshold. The downward sensitivity curve is an algebraic identity of the scoring rule for any single, fixed destination; the tool could not produce any other shape from one destination's own score. The chart the tool actually draws, however, re-selects its best-scoring destination at every uncertainty level rather than holding one fixed, and Section 6.10 documents a worked case in this report where that re-selection produces a non-monotonic curve -- not because uncertainty helped, but because a capacity-infeasible destination was being selected at low uncertainty. That is a defect in the chart's destination-selection step, not evidence against the identity above.
 
 The contribution is therefore not a demonstration *that* uncertainty degrades decisions. It is an operationalisation: the tool encodes that premise explicitly, in one auditable line, and makes its consequences visible and measurable at a chosen set of parameter values. The premise is defensible and widely held, but it is an input here, and no result reported below should be read as independent evidence for it.
 
@@ -216,6 +216,68 @@ Note that a destination whose gatekeeper is blocked is capped at twenty per cent
 
 6.7 Alerts. Warnings surface unassigned groups and destinations excluded by a named gatekeeper.
 
+6.8 A worked example (seed 42, eight destinations, three groups, thirty per cent uncertainty). This is the exact citation the reproducibility section recommends (9.2), run for the first time in this report rather than only described. Anyone can regenerate it at `?seed=42&n=8&m=3&u=30` on the live site.
+
+Of the eight generated destinations, five carry a Blocked gatekeeper and are capped at twenty per cent readiness -- matching the "roughly five in eight" the backlog reports for this seed (7.3). The three evacuee groups drawn for M=3 are Unaccompanied minors (632 people, immediate), Elderly and mobility-impaired (378 people, immediate), and Mixed general population (483 people, can-wait).
+
+| Group | Assigned destination | Composite score | Readiness | Predicted success | Riskiest factor |
+|---|---|---|---|---|---|
+| Unaccompanied minors | Zone Golf | 66.7% | 20.0% (gatekeeper-capped) | 20.2% (±14.3pp) | Willingness (Unwilling) |
+| Elderly & mobility-impaired | Station Hotel | 72.4% | 47.1% | 48.0% (±16.1pp) | Capacity (Unknown) |
+| Mixed general population | Zone Golf | 61.7% | 20.0% (gatekeeper-capped) | 17.8% (±13.8pp) | Willingness (Unwilling) |
+
+Two of the three groups were sent to Zone Golf, the one destination in the pool whose Willingness gatekeeper is Blocked. This is not an assignment error; it is what Section 5.8's weighting does when a capped-but-close-and-roomy site outranks a viable-but-farther one. Zone Golf sits 26km away with ample spare capacity, so its capacity-fit and proximity terms (weights 0.30 and 0.20) offset its capped readiness (weight 0.40) in the blended score. The alternative available to the minors group, Centre Foxtrot, scored lower on the composite (63.3% against Zone Golf's 66.7%) but carried a Monte Carlo success rate of 49.0% -- more than double Zone Golf's 20.2%. The alternative available to the Mixed general population group, Zone Delta, scored lower still (57.4%) but carried a success rate of 73.2% -- roughly four times Zone Golf's 17.8%.
+
+This answers the first research question (2.5) concretely rather than in the abstract: multi-factor readiness does not translate into probable outcome by simple ranking. The composite score the tool actually assigns on is a blend in which logistics terms (capacity fit, proximity) can outweigh a hard readiness cap, so the top-ranked destination and the destination most likely to succeed are not always the same place, and in this scenario were not the same place for two-thirds of the groups. A reader relying on the composite ranking alone, without also checking the predicted success rate, would materially overrate two of the three assignments here.
+
+6.9 The same scenario at higher uncertainty. Re-running the identical destinations and groups -- nothing regenerated -- at eighty per cent uncertainty instead of thirty gives:
+
+| Group | Assigned destination (unchanged) | Predicted success at 30% uncertainty | Predicted success at 80% uncertainty | Fall |
+|---|---|---|---|---|
+| Unaccompanied minors | Zone Golf | 20.2% | 12.6% | -7.6pp (-38% relative) |
+| Elderly & mobility-impaired | Station Hotel | 48.0% | 14.8% | -33.2pp (-69% relative) |
+| Mixed general population | Zone Golf | 17.8% | 13.8% | -4.0pp (-22% relative) |
+
+This answers the second research question (2.5): the assigned destination for every group is identical at both uncertainty levels -- the "reality" of the scenario has not moved -- yet predicted success fell for all three, and by very different amounts. Elderly and mobility-impaired lost more than two-thirds of its predicted success; Mixed general population lost about a fifth. The reason is visible in the source data: Elderly and mobility-impaired was assigned to Station Hotel on the strength of a factor (Capacity) whose status is Unknown and whose confidence was still fairly high at 30% uncertainty, so it had more confidence left to lose as the slider moved than Zone Golf's Willingness-driven cap, which was already doing most of the damage to the other two groups' scores at 30%. The magnitude and the unevenness of the fall, not just its direction, is the finding this report was missing.
+
+6.10 The full sensitivity curves for two contrasting groups. Section 1.3 states that the downward slope is guaranteed by the confidence formula for any single destination's score, and that is correct. It does not follow that the chart the tool actually draws is guaranteed to be monotonic, because the chart does not track one destination -- at each of the eleven uncertainty levels it independently re-selects whichever destination currently scores highest (4.6, 6.5) and plots that destination's success rate. The two group curves below, generated from this scenario across the full 0-100% range, show what that produces in practice.
+
+| Uncertainty | Elderly & mobility-impaired | Unaccompanied minors |
+|---|---|---|
+| 0% | 70.4% | 0.0% |
+| 10% | 56.6% | 0.0% |
+| 20% | 53.2% | 0.0% |
+| 30% | 45.6% | 0.0% |
+| 40% | 42.0% | 0.0% |
+| 50% | 33.6% | 22.4% |
+| 60% | 29.0% | 19.8% |
+| 70% | 28.2% | 13.4% |
+| 80% | 17.0% | 13.2% |
+| 90% | 14.6% | 12.8% |
+| 100% | 7.6% | 4.6% |
+
+The Elderly and mobility-impaired curve declines the way the headline claim describes. The Unaccompanied minors curve does not: it is flat at zero from 0% to 40% uncertainty, then rises to 22.4% at 50% before resuming a decline. Checked against the code, the cause is that the chart's destination-selection step (`buildCurves`, unlike the actual assignment step `assign`) does not filter candidates by whether their capacity is sufficient for the group -- it only discounts insufficient capacity proportionally in the composite score. For a group of 632 people, the highest-composite destination at 0-40% uncertainty is Station Hotel, which holds only 545 -- too few for this group under any circumstances. `monteCarlo`'s success condition requires `dest.capacity >= group.size` (4.4), so every one of the 500 trials at those uncertainty levels fails on capacity alone, regardless of readiness, and the chart reports a flat 0%. Past 40% uncertainty, Station Hotel's composite score has decayed enough that Zone Golf -- smaller readiness, but large enough capacity -- overtakes it, and the reported success rate jumps because the chart is now looking at a different, viable destination. **The rise is a selection artefact, not evidence that more uncertainty helped this group.** This is now flagged in the backlog (see BACKLOG.md) as a fix candidate: the chart's per-level destination selection should apply the same capacity-viability filter the real assignment step uses, or the chart should visibly flag when its selected destination could never be viable.
+
+6.11 The Factor Information Value ranking. Run against this scenario at 30% uncertainty, using the tool's own 100-run counterfactual (5.9, 6.6):
+
+| Factor | Unknown instances in this scenario | Baseline mean success | Mean success if resolved | Estimated gain |
+|---|---|---|---|---|
+| Willingness | 2 | 32.0% | 25.3% | -6.7pp |
+| Security | 1 | 32.0% | 26.0% | -6.0pp |
+| Food & water | 1 | 32.0% | 27.7% | -4.3pp |
+| Capacity | 3 | 32.0% | 30.7% | -1.3pp |
+| Medical capacity | 1 | 32.0% | 32.7% | +0.7pp |
+| Authority consent | 0 | 32.0% | 32.0% | 0 |
+| Shelter | 0 | 32.0% | 32.0% | 0 |
+
+Read naively, this ranking says resolving Willingness would cost 6.7 percentage points of predicted success, which is nonsensical -- upgrading a factor from Unknown to Operational can only raise or hold its own score (5.2, 5.4), never lower it. The negative entries are the estimator's sampling noise, not a real effect. The panel runs only 100 trials per pairing (5.9), which at a success rate near 30% carries a standard error of roughly five to six percentage points per estimate, comparable to the size of every "gain" reported here except Willingness and Security. **This report's third finding is therefore about the instrument's own honesty envelope, not about which factor to check first:** at 100 runs, the Factor Information Value panel cannot reliably distinguish a genuinely low-value factor from noise, and a user citing its ranking to prioritise a real assessment trip should either raise `INFO_RUNS` well above 100 or treat only large, repeated gaps as meaningful. This is now recorded as a backlog item.
+
+6.12 Answering the three research questions (2.5). Read together, 6.8-6.11 do what 2.5 asked and what the earlier version of this report only described:
+
+- *How does multi-factor readiness translate into a probable outcome?* Not by simple ranking -- 6.8 shows the composite score the tool actually assigns on can rank a hard-capped, twenty-per-cent-readiness destination above a viable alternative with two to four times its predicted success, because logistics terms in the composite can outweigh the readiness cap.
+- *How does degraded field intelligence propagate through the chain of an evacuation decision?* Unevenly. 6.9 holds the scenario fixed and moves only uncertainty from 30% to 80%: every group's predicted success fell, but by amounts ranging from a fifth to over two-thirds, depending on which factor was driving that group's score and how much confidence that factor had left to lose. 6.10 adds the caveat that the tool's own sensitivity chart can misrepresent this propagation for a given group if its best-scoring destination at low uncertainty turns out to be capacity-infeasible.
+- *Where would real-time, machine-assisted assessment provide the greatest gain in decision quality?* 6.11 runs the tool's own answer to this and finds that, at the panel's default run count, the ranking is not resolvable from noise for most factors in this scenario -- itself a substantive finding about how much assessment volume the panel needs before its ranking should be acted on.
+
 ---
 
 ## 7. The Two Distinctions the Model Insists On
@@ -315,7 +377,7 @@ Note that a destination whose gatekeeper is blocked is capped at twenty per cent
 
 14.1 The most useful thing about this simulator is that it makes one relationship easy to see. Move the uncertainty slider and predicted outcomes deteriorate while the scenario behind them is provably unchanged, because the scenario is regenerated only on demand and not when the slider moves. The degradation is entirely an artefact of what is knowable.
 
-This is not a negative *result*, and earlier versions of this paper wrongly described it as one. As 1.3 sets out, the monotonic decline follows algebraically from the scoring rule, in which uncertainty multiplies confidence and confidence scales every factor score. The tool assumes that uncertainty degrades assessed outcomes and then displays that assumption's consequences; it does not test it. What is contributed is the explicitness -- the premise lives in one auditable line rather than being diffused through a model -- together with a way to see how steeply it bites at particular parameter values. That is a more honest contribution than a tool producing confident numbers would be, but it is a smaller one than a demonstration.
+This is not a negative *result*, and earlier versions of this paper wrongly described it as one. As 1.3 sets out, the monotonic decline follows algebraically from the scoring rule for any one destination, in which uncertainty multiplies confidence and confidence scales every factor score -- though 6.10 shows the tool's own chart can still render a non-monotonic curve when its destination-reselection step picks an infeasible site, which is a bug in that step rather than a counterexample to the identity. The tool assumes that uncertainty degrades assessed outcomes and then displays that assumption's consequences; it does not test it. What is contributed is the explicitness -- the premise lives in one auditable line rather than being diffused through a model -- together with a way to see how steeply it bites at particular parameter values. That is a more honest contribution than a tool producing confident numbers would be, but it is a smaller one than a demonstration.
 
 14.2 The two epistemic distinctions are the other substantive contribution. Separating a confident admission of ignorance from an unreliable one, and separating an open question from a settled refusal, are both choices that a simpler scoring system would have flattened. The decision to promote Willingness to a gatekeeper, and to name it Unwilling rather than Blocked, came from noticing that the arithmetic was allowing a good food supply to outvote a community's refusal. That is the kind of error that is easy to make and hard to see once made.
 

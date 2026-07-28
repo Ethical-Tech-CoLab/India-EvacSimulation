@@ -29,6 +29,14 @@ security report and how to reach you — no details.
 There is no bug bounty. The Ethical Tech CoLab is a small research group and
 this is unfunded work; please be patient.
 
+## Which repository to report against
+
+This repository (`Ethical-Tech-CoLab/India-EvacSimulation`) is canonical.
+[`indiaclarke03-ops/EvacSimulator`](https://github.com/indiaclarke03-ops/EvacSimulator)
+mirrors it downstream and has no security policy or private reporting of its
+own. If you found an issue while looking at the mirror, please still report
+it here.
+
 ## Supported versions
 
 There are no releases or version tags. Only the current state of the `main`
